@@ -1,0 +1,43 @@
+Package: LinGxEScanR
+Type: Package
+Title: What the package does (short line)
+Version: 1.0
+Date: 2021-03-30
+Authors@R:
+    c(person(given = "John",
+             family = "Morrison",
+             role = c("aut", "cre"),
+             email = "jmorr@usc.edu"),
+      person(given = "NCI",
+             role = "fnd",
+             comment = "CA196559"),
+      person(given = "NCI",
+             role = "fnd",
+             comment = "CA201407"),
+      person(given = "NIEHS",
+             role = "fnd",
+             comment = "ES007048"),
+      person(given = "NHLBI",
+             role = "fnd",
+             comment = "HL115606"))
+Description: More about what it does (maybe more than one line)
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat (>= 2.1.0),
+    covr
+VignetteBuilder: knitr
+RoxygenNote: 7.1.1
+Roxygen: list(markdown = TRUE)
+LinkingTo: 
+    Rcpp,
+    RcppArmadillo
+Imports: 
+    Rcpp,
+    RcppArmadillo,
+    BinaryDosage,
+    digest,
+    prodlim
