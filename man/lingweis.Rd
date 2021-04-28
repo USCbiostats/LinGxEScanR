@@ -47,5 +47,5 @@ Run a linear gweis using genetic data from a binary dosage or vcf file
 bdinfo <- readRDS(system.file("extdata/pdata_4_1.bdinfo", package = "GxEScanR"))
 covdata <- readRDS(system.file("extdata/covdata.rds", package = "GxEScanR"))
 
-results <- gweis(data = covdata, bdinfo = bdinfo)
+results <- gweis(data = covdata, ginfo = bdinfo)
 }

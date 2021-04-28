@@ -1,6 +1,6 @@
 Package: LinGxEScanR
 Type: Package
-Title: What the package does (short line)
+Title: Run Linear Regression GWEIS Using VCF or Binary Dosage Files
 Version: 1.0
 Date: 2021-03-30
 Authors@R:
@@ -20,15 +20,22 @@ Authors@R:
       person(given = "NHLBI",
              role = "fnd",
              comment = "HL115606"))
-Description: More about what it does (maybe more than one line)
+Description: Tools to run linear regression genome-wide by
+  environment interaction study (GWEIS) using VCF or Binary
+  Dosage formatted files. The user provides a data frame with
+  the subject's covariate data and the information about the
+  genetic data file returned by the BinaryDosage::getvcfinfo()
+  or BinaryDosage::getbdinfo() routine.
 License: GPL-3
 Encoding: UTF-8
+Language: en-US
 LazyData: true
 Suggests: 
     knitr,
     rmarkdown,
     testthat (>= 2.1.0),
-    covr
+    covr,
+    rmarkdown
 VignetteBuilder: knitr
 RoxygenNote: 7.1.1
 Roxygen: list(markdown = TRUE)
