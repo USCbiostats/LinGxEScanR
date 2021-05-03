@@ -11,36 +11,33 @@
 const double LOG2PIP1 = log(M_PI + M_PI) + 1.;
 
 // [[Rcpp::export]]
-Rcpp::List initlslinreg(const arma::vec &y,
-                        const arma::mat &x) {
-  arma::mat ql, rtl, xtx;
-  arma::vec residuals, zt, k;
-  double sigma2, s2, loglike;
+int initlslinreg(const arma::vec &y,
+                 const arma::mat &xl,
+                 arma::mat &xtx,
+                 arma::mat &ql,
+                 arma::mat &rtl,
+                 arma::vec &k,
+                 arma::vec &zt,
+                 arma::vec &resids,
+                 arma::vec &s2) {
+  double sigma2;
   
-  qr_econ(ql, rtl, x);
+  qr_econ(ql, rtl, xl);
   zt = ql.t() * y;
   solve(k, rtl, zt);
-  residuals = y - x * k;
-  sigma2 = arma::dot(residuals, residuals) / x.n_rows;
-  s2 = sigma2 * x.n_rows / (x.n_rows - x.n_cols);
-  xtx = trans(x) * x;
-  loglike = -(y.n_elem * (LOG2PIP1 + log(sigma2)) / 2.);
-  
-  return Rcpp::List::create(Rcpp::Named("residuals") = residuals,
-                            Rcpp::Named("ql") = ql,
-                            Rcpp::Named("rtl") = rtl,
-                            Rcpp::Named("zt") = zt,
-                            Rcpp::Named("k") = k,
-                            Rcpp::Named("s2") = s2,
-                            Rcpp::Named("sigma2") = sigma2,
-                            Rcpp::Named("xtx") = xtx,
-                            Rcpp::Named("loglike") = loglike);
+  resids = y - xl * k;
+  sigma2 = arma::dot(resids, resids) / xl.n_rows;
+  s2[0] = sigma2 * xl.n_rows / (xl.n_rows - xl.n_cols);
+  xtx.submat(0, 0, xl.n_cols - 1, xl.n_cols - 1) = trans(xl) * xl;
+
+  return 0;
 }
 
 // [[Rcpp::export]]
-int lslinreg(const arma::vec &y,
+int lslinreg(const arma::vec &dosage,
+             const arma::vec &y,
              const arma::mat &xl,
-             const arma::mat &xr,
+             arma::mat &xr,
              arma::mat &xtx,
              arma::mat &bt,
              arma::mat &bb,
@@ -53,14 +50,17 @@ int lslinreg(const arma::vec &y,
              const arma::mat &k,
              arma::mat &t,
              arma::mat &zb,
-             arma::vec &res,
+             arma::vec &resids,
              arma::vec &s2,
              arma::mat &xtxinv,
              arma::vec &std_err,
-             arma::mat &xrS2,
-             arma::vec &xrChi2) {
+             arma::mat &xrs2,
+             arma::vec &chi2) {
   int c1, c2, r1, r2;
 
+  xr.col(0) = dosage;
+  if (xr.n_cols == 2)
+    xr.col(1) = xr.col(0) % xl.col(xl.n_cols - 1);
   rtr = trans(ql) * xr;
   t = xr - ql * rtr;
   qr_econ(qr, rbr, t);
@@ -69,8 +69,8 @@ int lslinreg(const arma::vec &y,
   solve(bb, rbr, zb);
   bt = k - h*bb;
   
-  res = y - xl*bt - xr*bb;
-  s2[0] = std::inner_product(res.begin(), res.end(), res.begin(), 0.0);
+  resids = y - xl*bt - xr*bb;
+  s2[0] = std::inner_product(resids.begin(), resids.end(), resids.begin(), 0.0);
   s2[0] /= (xl.n_rows - xl.n_cols - xr.n_cols);
   
   // Building the xtx matrix  
@@ -85,13 +85,11 @@ int lslinreg(const arma::vec &y,
   
   xtxinv = s2[0] * pinv(xtx);
   std_err = arma::sqrt(arma::diagvec(xtxinv));  
-  xrS2 = xtxinv.submat(r1,r1,r2,r2);
-  xrChi2 = trans(bb) * pinv(xrS2) * bb;
+  xrs2 = xtxinv.submat(r1,r1,r2,r2);
+  chi2 = trans(bb) * pinv(xrs2) * bb;
   return 0;
 }
 
-// and we can use Rcpp::List to return both at the same time
-//
 // [[Rcpp::export]]
 Rcpp::List initreg(const arma::mat &X, const arma::colvec &y) {
   int n = X.n_rows, k = X.n_cols;

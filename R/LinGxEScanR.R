@@ -2,6 +2,104 @@
 #' @importFrom Rcpp sourceCpp
 NULL
 
+getdosages <- function(dosage, p0, p1, p2) {
+  return (dosage)
+}
+
+allocatelinregmem <- function(data, n, p, q) {
+  y <- data[,1]
+  xl <- as.matrix(data[,1:p])
+  xl[,1] <- 1.
+  xr <- matrix(0., n, q)
+  xtx <- matrix(0., p + q, p + q)
+  bt <- matrix(0., 1, p)
+  bb <- matrix(0., 1, q)
+  ql <- matrix(0., n, p)
+  qr <- matrix(0., n, q)
+  rtl <- matrix(0., p, p)
+  rtr <- matrix(0., p, q)
+  rbr <- matrix(0., q, q)
+  h <- matrix(0., p, q)
+  k <- matrix(0., p, 1)
+  t <- matrix(0., n, q)
+  zt <- matrix(0, p, 1)
+  zb <- matrix(0., q, 1)
+  resids <- numeric(n)
+  s2 <- numeric(1)
+  xtxinv <- matrix(0., p + q, p + q)
+  std_err <- numeric(p + q)
+  xrs2 <- matrix(0., q, q)
+  chi2 <- numeric(1)
+  
+  return(list(y = y,
+              xl = xl,
+              xr = xr,
+              xtx = xtx,
+              bt = bt,
+              bb = bb,
+              ql = ql,
+              qr = qr,
+              rtl = rtl,
+              rtr = rtr,
+              rbr = rbr,
+              h = h,
+              k = k,
+              t = t,
+              zt = zt,
+              zb = zb,
+              resids = resids,
+              s2 = s2,
+              xtxinv = xtxinv,
+              std_err = std_err,
+              xrs2 = xrs2,
+              chi2 = chi2))
+}
+
+initializelslinreg <- function(linregmem) {
+  initlslinreg(y = linregmem$y,
+               xl = linregmem$xl,
+               xtx = linregmem$xtx,
+               ql = linregmem$ql,
+               rtl = linregmem$rtl,
+               k = linregmem$k,
+               zt = linregmem$zt,
+               resids = linregmem$resids,
+               s2 = linregmem$s2)
+}
+
+runlslinreg <- function(dosage, linregmem) {
+  lslinreg(dosage = dosage,
+           y = linregmem$y,
+           xl = linregmem$xl,
+           xr = linregmem$xr,
+           xtx = linregmem$xtx,
+           bt = linregmem$bt,
+           bb = linregmem$bb,
+           ql = linregmem$ql,
+           qr = linregmem$qr,
+           rtl = linregmem$rtl,
+           rtr = linregmem$rtr,
+           rbr = linregmem$rbr,
+           h = linregmem$h,
+           k = linregmem$k,
+           t = linregmem$t,
+           zb = linregmem$zb,
+           resids = linregmem$resids,
+           s2 = linregmem$s2,
+           xtxinv = linregmem$xtxinv,
+           std_err = linregmem$std_err,
+           xrs2 = linregmem$xrs2,
+           chi2 = linregmem$chi2)
+}
+
+alllslinreg <- function(dosage, p0, p1, p2, subindex,
+                        lslinregg, lslinregge, lslinreggxe) {
+  subdose <- dosage[subindex]
+  runlslinreg(subdose, lslinregg)
+  runlslinreg(subdose, lslinregge)
+  runlslinreg(subdose, lslinreggxe)
+}
+
 subsetsnps <- function(snps, snplist) {
   if (length(snps) == 0) {
     stop("No SNPs selected")
@@ -185,11 +283,53 @@ lingweis <- function(data, ginfo, snps, outfile, skipfile,
   validateinput(data, ginfo, outfile, skipfile, minmaf, blksize)
   snps <- subsetsnps(snps = snps,
                      snplist = ginfo$snps$snpid)
+  snps <- (1:length(snps))[snps]
   data <- subsetdata(subdata = data,
                      ginfo = ginfo,
                      mincov = 1)
   nsub <- nrow(data)
   ncov <- ncol(data)
   
-  return (data)
+  subindex <- match(subdata[,1], ginfo$samples$sid)
+  
+  #####################################################
+  ###       Calcualte the minimum number
+  ###       of observed genes
+  #####################################################
+  if (minmaf == 0)
+    minsum <- 2 * nrow(data) * 0.05
+  else
+    minsum <- 2 * nrow(data) * minmaf
+  maxsum <- 2*nrow(data) - minsum
+  
+  #####################################################
+  ###       Do initial regressions
+  #####################################################
+  lslinregg <- allocatelinregmem(data = data,
+                                 n = nrow(data),
+                                 p = ncol(data) - 1L,
+                                 q = 1L)
+  lslinregge <- allocatelinregmem(data = data,
+                                  n = nrow(data),
+                                  p = ncol(data),
+                                  q = 1L)
+  lslinreggxe <- allocatelinregmem(data = data,
+                                   n = nrow(data),
+                                   p = ncol(data),
+                                   q = 2L)
+  initializelslinreg(lslinregg)
+  initializelslinreg(lslinregge)
+  initializelslinreg(lslinreggxe)
+
+  vcfapply2(ginfo,
+            func = alllslinreg,
+            snps = snps,
+            subindex = subindex,
+            lslinregg = lslinregg,
+            lslinregge = lslinregge,
+            lslinreggxe = lslinreggxe)
+
+  return (list(g = lslinregg,
+               ge = lslinregge,
+               gxe = lslinreggxe))
 }
