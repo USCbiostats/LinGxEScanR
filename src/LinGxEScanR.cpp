@@ -11,6 +11,12 @@
 const double LOG2PIP1 = log(M_PI + M_PI) + 1.;
 
 // [[Rcpp::export]]
+int increment(arma::ivec &n) {
+  n[0]++;
+  return 0;
+}
+
+// [[Rcpp::export]]
 int initlslinreg(const arma::vec &y,
                  const arma::mat &xl,
                  arma::mat &xtx,

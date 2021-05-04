@@ -92,12 +92,63 @@ runlslinreg <- function(dosage, linregmem) {
            chi2 = linregmem$chi2)
 }
 
-alllslinreg <- function(dosage, p0, p1, p2, subindex,
-                        lslinregg, lslinregge, lslinreggxe) {
+runalllslinreg <- function(dosage, p0, p1, p2, subindex,
+                        lslinregg, lslinregge, lslinreggxe,
+                        snpinfo, snplist, snpnum, outfile) {
   subdose <- dosage[subindex]
+  snpid <- snpinfo$snpid[snplist[snpnum]]
+  chromosome <- snpinfo$chromosome[snplist[snpnum]]
+  location <- snpinfo$location[snplist[snpnum]]
+  reference <- snpinfo$reference[snplist[snpnum]]
+  alternate <- snpinfo$alternate[snplist[snpnum]]
+  increment(snpnum)
   runlslinreg(subdose, lslinregg)
   runlslinreg(subdose, lslinregge)
   runlslinreg(subdose, lslinreggxe)
+  n <- length(subindex)
+  p1 <- ncol(lslinregg$xl)
+  q1 <- ncol(lslinregg$xr)
+  p2 <- ncol(lslinregge$xl)
+  q2 <- ncol(lslinregge$xr)
+  p3 <- ncol(lslinreggxe$xl)
+  q3 <- ncol(lslinreggxe$xr)
+  bg = lslinregg$bb[1]
+  seg = lslinregg$std_err[p1 + 1]
+  tg = lslinregg$bb[1] / lslinregg$std_err[p1 + 1]
+  dfg = n - p1 - q1
+  bge = lslinregge$bb[1]
+  seg = lslinregge$std_err[p2 + 1]
+  tge = lslinregge$bb[1] / lslinregge$std_err[p2 + 1]
+  dfge = n - p2 - q2
+  bggxe = lslinreggxe$bb[1]
+  seggxe = lslinreggxe$std_err[p3 + 1]
+  tggxe = lslinreggxe$bb[1] / lslinreggxe$std_err[p3 + 1]
+  dfggxe = n - p3 - q3
+  bgxe = lslinreggxe$bb[2]
+  segxe = lslinreggxe$std_err[p3 + 2]
+  tgxe = lslinreggxe$bb[2] / lslinreggxe$std_err[p3 + 2]
+  dfgxe = n - p3 - q3
+  varg = lslinreggxe$xrs2[1,1]
+  vargxe = lslinreggxe$xrs2[2,2]
+  covggxe = lslinreggxe$xrs2[1,2]
+  chisqggxe = lslinreggxe$chi2
+  dfchisqggxe = 2L
+  if (outfile == '') {
+    return (list(snpid, chromosome, location, reference, alternate,
+                 n, bg, seg, tg, dfg, bge, seg, tge, dfge,
+                 bggxe, seggxe, tggxe, dfggxe, bgxe, segxe, tgxe, dfgxe,
+                 varg, vargxe, covggxe, chisqggxe, dfchisqggxe))
+  }
+  outline <- paste(snpid, chromosome, location, reference, alternate,
+                   n, bg, seg, tg, dfg, bge, seg, tge, dfge,
+                   bggxe, seggxe, tggxe, dfggxe, bgxe, segxe, tgxe, dfgxe,
+                   varg, vargxe, covggxe, chisqggxe, dfchisqggxe, sep = '\t')
+  filecon <- file(outfile, open = "a")
+  writeLines(outline, filecon)
+  close(filecon)
+    
+
+  return (0L)
 }
 
 subsetsnps <- function(snps, snplist) {
@@ -181,7 +232,7 @@ subsetdata <- function(subdata, ginfo, mincov) {
   if (nrow(covdata) == 0)
     stop("No subjects have complete data")
   
-  phenocov = as.matrix(covdata[,phenocol:(ncol(covdata)-1)])
+  phenocov <- as.matrix(covdata[,phenocol:(ncol(covdata)-1)])
   dimnames(phenocov) <- list(covdata[,ncol(covdata)],
                              colnames(covdata)[phenocol:(ncol(covdata)-1)])
   return (phenocov)
@@ -286,7 +337,7 @@ lingweis <- function(data, ginfo, snps, outfile, skipfile,
   snps <- (1:length(snps))[snps]
   data <- subsetdata(subdata = data,
                      ginfo = ginfo,
-                     mincov = 1)
+                     mincov = 1L)
   nsub <- nrow(data)
   ncov <- ncol(data)
   
@@ -321,15 +372,31 @@ lingweis <- function(data, ginfo, snps, outfile, skipfile,
   initializelslinreg(lslinregge)
   initializelslinreg(lslinreggxe)
 
-  vcfapply2(ginfo,
-            func = alllslinreg,
-            snps = snps,
-            subindex = subindex,
-            lslinregg = lslinregg,
-            lslinregge = lslinregge,
-            lslinreggxe = lslinreggxe)
+  if (outfile != '') {
+    columnnames <- paste("SNP", "CHR", "LOC", "REF", "ALT",
+                         "n", "bg", "seg", "tg", "dfg",
+                         "bge", "sege", "tge", "dfge",
+                         "bggxe", "seggxe", "tggxe", "dfggxe",
+                         "bgxe", "segxe", "tgxe", "dfgxe",
+                         "varg", "vargxe", "covggxe", "chisqggxe", "dfchisqggxe",
+                         sep = '\t')
+    filecon <- file(outfile, open = "w")
+    writeLines(columnnames, filecon)
+    close(filecon)
+  }
+  snpnumber <- integer(1)
+  snpnumber[1] <- 1L
+  result <- vcfapply2(ginfo,
+                      func = runalllslinreg,
+                      snps = snps,
+                      subindex = subindex,
+                      lslinregg = lslinregg,
+                      lslinregge = lslinregge,
+                      lslinreggxe = lslinreggxe,
+                      snpinfo = ginfo$snps,
+                      snplist = snps,
+                      snpnum = snpnumber,
+                      outfile = outfile)
 
-  return (list(g = lslinregg,
-               ge = lslinregge,
-               gxe = lslinreggxe))
+  return (result)
 }

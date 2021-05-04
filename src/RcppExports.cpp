@@ -6,6 +6,17 @@
 
 using namespace Rcpp;
 
+// increment
+int increment(arma::ivec& n);
+RcppExport SEXP _LinGxEScanR_increment(SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::ivec& >::type n(nSEXP);
+    rcpp_result_gen = Rcpp::wrap(increment(n));
+    return rcpp_result_gen;
+END_RCPP
+}
 // initlslinreg
 int initlslinreg(const arma::vec& y, const arma::mat& xl, arma::mat& xtx, arma::mat& ql, arma::mat& rtl, arma::vec& k, arma::vec& zt, arma::vec& resids, arma::vec& s2);
 RcppExport SEXP _LinGxEScanR_initlslinreg(SEXP ySEXP, SEXP xlSEXP, SEXP xtxSEXP, SEXP qlSEXP, SEXP rtlSEXP, SEXP kSEXP, SEXP ztSEXP, SEXP residsSEXP, SEXP s2SEXP) {
@@ -71,6 +82,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_LinGxEScanR_increment", (DL_FUNC) &_LinGxEScanR_increment, 1},
     {"_LinGxEScanR_initlslinreg", (DL_FUNC) &_LinGxEScanR_initlslinreg, 9},
     {"_LinGxEScanR_lslinreg", (DL_FUNC) &_LinGxEScanR_lslinreg, 22},
     {"_LinGxEScanR_initreg", (DL_FUNC) &_LinGxEScanR_initreg, 2},
