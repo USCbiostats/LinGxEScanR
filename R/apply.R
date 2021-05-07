@@ -228,8 +228,8 @@ vcfapply2 <- function(vcfinfo, func, snps, blksz, ...) {
       retval[[j]] <- func(dosage = dosage,
                           p0 = p0,
                           p1 = p1,
-                          p2 = p2
-                          , ...)
+                          p2 = p2,
+                          ...)
     }
   }
   close(con)
