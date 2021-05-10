@@ -57,7 +57,7 @@ levenetest <- function(dosage, p0, p1, p2, res) {
   
   z0 <- abs(res - muy0)
   z1 <- abs(res - muy1)
-  z2 <- abs(res - muy1)
+  z2 <- abs(res - muy2)
   muz0 <- sum(p0*z0)
   muz1 <- sum(p1*z1)
   muz2 <- sum(p2*z2)

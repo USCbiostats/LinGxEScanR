@@ -387,11 +387,11 @@ lingweis <- function(data, ginfo, snps, outfile, skipfile,
   if (outfile != '') {
     columnnames <- paste("SNP", "CHR", "LOC", "REF", "ALT",
                          "n", "bg_g", "seg_g", "wtg_g", "dfg_g",
-                         "bg_e", "seg_e", "wtg_e", "dfg_e",
+                         "bg_ge", "seg_ge", "wtg_ge", "dfg_ge",
                          "bg_gxe", "seg_gxe", "wtg_gxe", "dfg_gxe",
                          "bgxe", "segxe", "wtgxe", "dfgxe",
-                         "wchisqggxe", "dfwchisqggxe", "varg", "vargxe", "covggxe",
-                         "W", "wnumer", "wdenom", "wdf1", "wdf2",
+                         "wchisqggxe", "wdfggxe", "varg", "vargxe", "covggxe",
+                         "flevene", "fchisqnum", "fchisqden", "dfnum", "dfden",
                          sep = '\t')
     filecon <- file(outfile, open = "w")
     writeLines(columnnames, filecon)
