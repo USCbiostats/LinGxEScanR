@@ -357,10 +357,7 @@ lingweis <- function(data, ginfo, snps, outfile, skipfile,
   ###       Calcualte the minimum number
   ###       of observed genes
   #####################################################
-  if (minmaf == 0)
-    minsum <- 2 * nrow(data) * 0.05
-  else
-    minsum <- 2 * nrow(data) * minmaf
+  minsum <- 2 * nrow(data) * minmaf
   if (minsum < 10)
     minsum <- 10
   maxsum <- 2*nrow(data) - minsum
