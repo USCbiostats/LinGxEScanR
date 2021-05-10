@@ -96,8 +96,10 @@ runalllslinreg <- function(dosage, p0, p1, p2, subindex, minmac, maxmac,
                         lslinregg, lslinregge, lslinreggxe, leveneresids,
                         snpinfo, snplist, snpnum, outfile) {
   subdose <- dosage[subindex]
-  if (sum(subdose) < minmac || sum(subdose) > maxmac)
+  if (sum(subdose) < minmac || sum(subdose) > maxmac) {
+    increment(snpnum)
     return (NA)
+  }
   snpid <- snpinfo$snpid[snplist[snpnum]]
   chromosome <- snpinfo$chromosome[snplist[snpnum]]
   location <- snpinfo$location[snplist[snpnum]]
