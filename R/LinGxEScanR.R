@@ -245,7 +245,8 @@ subsetdata <- function(subdata, ginfo, mincov) {
   phenocov <- as.matrix(covdata[,phenocol:(ncol(covdata)-1)])
   dimnames(phenocov) <- list(covdata[,ncol(covdata)],
                              colnames(covdata)[phenocol:(ncol(covdata)-1)])
-  return (phenocov)
+  return (list(subdata = phenocov,
+               genindex = covdata$genindex))
 }
 
 #####################################################
@@ -345,13 +346,13 @@ lingweis <- function(data, ginfo, snps, outfile, skipfile,
   snps <- subsetsnps(snps = snps,
                      snplist = ginfo$snps$snpid)
   snps <- (1:length(snps))[snps]
-  data <- subsetdata(subdata = data,
-                     ginfo = ginfo,
-                     mincov = 1L)
+  subsetinfo <- subsetdata(subdata = data,
+                            ginfo = ginfo,
+                            mincov = 1L)
+  data <- subsetinfo$subdata
+  subindex <- subsetinfo$genindex
   nsub <- nrow(data)
   ncov <- ncol(data)
-  
-  subindex <- match(subdata[,1], ginfo$samples$sid)
   
   #####################################################
   ###       Calcualte the minimum number
