@@ -1,4 +1,11 @@
 levenetest <- function(dosage, p0, p1, p2, res) {
+  if (length(p0) == 0) {
+    return (list(f = NA,
+                 numer = NA,
+                 denom = NA,
+                 df1 = NA,
+                 df2 = NA))
+  }
   n0 <- sum(p0)
   n1 <- sum(p1)
   n2 <- sum(p2)
