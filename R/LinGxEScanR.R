@@ -100,6 +100,9 @@ runalllslinreg <- function(dosage, p0, p1, p2, subindex, minmac, maxmac,
     increment(snpnum)
     return (NA)
   }
+  subp0 <- p0[subindex]
+  subp1 <- p1[subindex]
+  subp2 <- p2[subindex]
   snpid <- snpinfo$snpid[snplist[snpnum]]
   chromosome <- snpinfo$chromosome[snplist[snpnum]]
   location <- snpinfo$location[snplist[snpnum]]
@@ -137,10 +140,10 @@ runalllslinreg <- function(dosage, p0, p1, p2, subindex, minmac, maxmac,
   covggxe <- lslinreggxe$xrs2[1,2]
   chisqggxe <- lslinreggxe$chi2
   dfchisqggxe <- 2L
-  w <- levenetest(dosage = dosage,
-                  p0 = p0,
-                  p1 = p1,
-                  p2 = p2,
+  w <- levenetest(dosage = subdose,
+                  p0 = subp0,
+                  p1 = subp1,
+                  p2 = subp2,
                   res = leveneresids)
   if (outfile == '') {
     return (list(snpid, chromosome, location, reference, alternate,
