@@ -92,9 +92,11 @@ runlslinreg <- function(dosage, linregmem) {
            chi2 = linregmem$chi2)
 }
 
-runalllslinreg <- function(dosage, p0, p1, p2, subindex, minmac, maxmac,
-                        lslinregg, lslinregge, lslinreggxe, leveneresids,
-                        snpinfo, snplist, snpnum, outfile) {
+runalllslinreg <- function(dosage, p0, p1, p2,
+                           subindex, binarye, eindex0, eindex1,
+                           minmac, maxmac,
+                           lslinregg, lslinregge, lslinreggxe, leveneresids,
+                           snpinfo, snplist, snpnum, outfile) {
   subdose <- dosage[subindex]
   if (sum(subdose) < minmac || sum(subdose) > maxmac) {
     increment(snpnum)
@@ -113,6 +115,13 @@ runalllslinreg <- function(dosage, p0, p1, p2, subindex, minmac, maxmac,
   runlslinreg(subdose, lslinregge)
   runlslinreg(subdose, lslinreggxe)
   n <- length(subindex)
+  aaf <- mean(subdose) / 2
+  if (binarye) {
+    n0 <- length(eindex0)
+    n1 <- length(eindex1)
+    aaf0 <- mean(dosage[eindex0]) / 2
+    aaf1 <- mean(dosage[eindex1]) / 2
+  }
   p_1 <- ncol(lslinregg$xl)
   q_1 <- ncol(lslinregg$xr)
   p_2 <- ncol(lslinregge$xl)
@@ -146,17 +155,29 @@ runalllslinreg <- function(dosage, p0, p1, p2, subindex, minmac, maxmac,
                   p2 = subp2,
                   res = leveneresids)
   if (outfile == '') {
+    if (binarye) {
+      return (list(snpid, chromosome, location, reference, alternate,
+                   n, aaf, n0, aaf0, n1, aaf1, bg, seg, tg, dfg, bge, seg, tge, dfge,
+                   bggxe, seggxe, tggxe, dfggxe, bgxe, segxe, tgxe, dfgxe,
+                   chisqggxe, dfchisqggxe, varg, vargxe, covggxe,
+                   w$f, w$numer, w$denom, w$df1, w$df2))
+    }
     return (list(snpid, chromosome, location, reference, alternate,
-                 n, bg, seg, tg, dfg, bge, seg, tge, dfge,
+                 n, aaf, bg, seg, tg, dfg, bge, seg, tge, dfge,
                  bggxe, seggxe, tggxe, dfggxe, bgxe, segxe, tgxe, dfgxe,
                  chisqggxe, dfchisqggxe, varg, vargxe, covggxe,
                  w$f, w$numer, w$denom, w$df1, w$df2))
   }
-  outline <- paste(snpid, chromosome, location, reference, alternate,
-                   n, bg, seg, tg, dfg, bge, seg, tge, dfge,
+  snpout <- paste(snpid, chromosome, location, reference, alternate, sep = '\t')
+  if (binarye)
+    nfout <- paste(n, aaf, n0, aaf0, n1, aaf1,  sep = '\t')
+  else
+    nfout <- paste(n, aaf, sep = '\t')
+  statout <- paste(bg, seg, tg, dfg, bge, seg, tge, dfge,
                    bggxe, seggxe, tggxe, dfggxe, bgxe, segxe, tgxe, dfgxe,
                    chisqggxe, dfchisqggxe, varg, vargxe, covggxe,
                    w$f, w$numer, w$denom, w$df1, w$df2, sep = '\t')
+  outline <- paste(snpout, nfout, statout, sep = '\t')
   filecon <- file(outfile, open = "a")
   writeLines(outline, filecon)
   close(filecon)
@@ -248,8 +269,16 @@ subsetdata <- function(subdata, ginfo, mincov) {
   phenocov <- as.matrix(covdata[,phenocol:(ncol(covdata)-1)])
   dimnames(phenocov) <- list(covdata[,ncol(covdata)],
                              colnames(covdata)[phenocol:(ncol(covdata)-1)])
+  eunique <- sort(unique(phenocov[,ncol(phenocov)]))
+  if (length(eunique) == 2) {
+    binarye <- all(eunique == c(0,1))
+  } else {
+    binarye <- FALSE
+  }
+    
   return (list(subdata = phenocov,
-               genindex = covdata$genindex))
+               genindex = covdata$genindex,
+               binarye = binarye))
 }
 
 #####################################################
@@ -354,6 +383,13 @@ lingweis <- function(data, ginfo, snps, outfile, skipfile,
                             mincov = 1L)
   data <- subsetinfo$subdata
   subindex <- subsetinfo$genindex
+  if (subsetinfo$binarye) {
+    eindex0 <- subindex[data[,ncol(data)] == 0]
+    eindex1 <- subindex[data[,ncol(data)] == 1]
+  } else {
+    eindex0 <- integer(0)
+    eindex1 <- integer(0)
+  }
   nsub <- nrow(data)
   ncov <- ncol(data)
   
@@ -388,14 +424,19 @@ lingweis <- function(data, ginfo, snps, outfile, skipfile,
   leveneresids[1:nrow(data)] <- lslinregge$resids
 
   if (outfile != '') {
-    columnnames <- paste("SNP", "CHR", "LOC", "REF", "ALT",
-                         "n", "bg_g", "seg_g", "wtg_g", "dfg_g",
-                         "bg_ge", "seg_ge", "wtg_ge", "dfg_ge",
-                         "bg_gxe", "seg_gxe", "wtg_gxe", "dfg_gxe",
-                         "bgxe", "segxe", "wtgxe", "dfgxe",
-                         "wchisqggxe", "wdfggxe", "varg", "vargxe", "covggxe",
-                         "flevene", "fchisqnum", "fchisqden", "dfnum", "dfden",
-                         sep = '\t')
+    snpcols <- paste("SNP", "CHR", "LOC", "REF", "ALT", sep = '\t')
+    if (subsetinfo$binarye == TRUE)
+      nfcols <- paste("n", "aaf", "n_e0", "aaf_e0", "n_e1", "aaf_e1", sep = '\t')
+    else
+      nfcols <- paste("n", "aaf", sep = '\t')
+    testcols <- paste("bg_g", "seg_g", "wtg_g", "dfg_g",
+                      "bg_ge", "seg_ge", "wtg_ge", "dfg_ge",
+                      "bg_gxe", "seg_gxe", "wtg_gxe", "dfg_gxe",
+                      "bgxe", "segxe", "wtgxe", "dfgxe",
+                      "wchisqggxe", "wdfggxe", "varg", "vargxe", "covggxe",
+                      "flevene", "fchisqnum", "fchisqden", "dfnum", "dfden",
+                      sep = '\t')
+    columnnames <- paste(snpcols, nfcols, testcols, sep = '\t')
     filecon <- file(outfile, open = "w")
     writeLines(columnnames, filecon)
     close(filecon)
@@ -409,6 +450,9 @@ lingweis <- function(data, ginfo, snps, outfile, skipfile,
                         minmac = minsum,
                         maxmac = maxsum,
                         subindex = subindex,
+                        binarye = subsetinfo$binarye,
+                        eindex0 = eindex0,
+                        eindex1 = eindex1,
                         lslinregg = lslinregg,
                         lslinregge = lslinregge,
                         lslinreggxe = lslinreggxe,
@@ -424,6 +468,9 @@ lingweis <- function(data, ginfo, snps, outfile, skipfile,
                        minmac = minsum,
                        maxmac = maxsum,
                        subindex = subindex,
+                       binarye = subsetinfo$binarye,
+                       eindex0 = eindex0,
+                       eindex1 = eindex1,
                        lslinregg = lslinregg,
                        lslinregge = lslinregge,
                        lslinreggxe = lslinreggxe,
