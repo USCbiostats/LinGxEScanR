@@ -5,12 +5,12 @@ increment <- function(n) {
     .Call(`_LinGxEScanR_increment`, n)
 }
 
-initlslinreg <- function(y, xl, xtx, ql, rtl, k, zt, resids, s2) {
-    .Call(`_LinGxEScanR_initlslinreg`, y, xl, xtx, ql, rtl, k, zt, resids, s2)
+initlslinreg <- function(y, xl, xtx, xtxinv0, ql, rtl, k, zt, resids, sigma2, s2, loglike) {
+    .Call(`_LinGxEScanR_initlslinreg`, y, xl, xtx, xtxinv0, ql, rtl, k, zt, resids, sigma2, s2, loglike)
 }
 
-lslinreg <- function(dosage, y, xl, xr, xtx, bt, bb, ql, qr, rtl, rtr, rbr, h, k, t, zb, resids, s2, xtxinv, std_err, xrs2, chi2) {
-    .Call(`_LinGxEScanR_lslinreg`, dosage, y, xl, xr, xtx, bt, bb, ql, qr, rtl, rtr, rbr, h, k, t, zb, resids, s2, xtxinv, std_err, xrs2, chi2)
+lslinreg <- function(dosage, y, xl, xr, xtx, bt, bb, ql, qr, rtl, rtr, rbr, h, k, t, zb, resids, sigma2, s2, hws2, xtxinv, std_err, xrs2, chi2, loglike) {
+    .Call(`_LinGxEScanR_lslinreg`, dosage, y, xl, xr, xtx, bt, bb, ql, qr, rtl, rtr, rbr, h, k, t, zb, resids, sigma2, s2, hws2, xtxinv, std_err, xrs2, chi2, loglike)
 }
 
 initreg <- function(X, y) {

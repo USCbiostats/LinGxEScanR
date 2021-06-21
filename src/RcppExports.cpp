@@ -18,27 +18,30 @@ BEGIN_RCPP
 END_RCPP
 }
 // initlslinreg
-int initlslinreg(const arma::vec& y, const arma::mat& xl, arma::mat& xtx, arma::mat& ql, arma::mat& rtl, arma::vec& k, arma::vec& zt, arma::vec& resids, arma::vec& s2);
-RcppExport SEXP _LinGxEScanR_initlslinreg(SEXP ySEXP, SEXP xlSEXP, SEXP xtxSEXP, SEXP qlSEXP, SEXP rtlSEXP, SEXP kSEXP, SEXP ztSEXP, SEXP residsSEXP, SEXP s2SEXP) {
+int initlslinreg(const arma::vec& y, const arma::mat& xl, arma::mat& xtx, arma::mat& xtxinv0, arma::mat& ql, arma::mat& rtl, arma::vec& k, arma::vec& zt, arma::vec& resids, arma::vec& sigma2, arma::vec& s2, arma::vec& loglike);
+RcppExport SEXP _LinGxEScanR_initlslinreg(SEXP ySEXP, SEXP xlSEXP, SEXP xtxSEXP, SEXP xtxinv0SEXP, SEXP qlSEXP, SEXP rtlSEXP, SEXP kSEXP, SEXP ztSEXP, SEXP residsSEXP, SEXP sigma2SEXP, SEXP s2SEXP, SEXP loglikeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type xl(xlSEXP);
     Rcpp::traits::input_parameter< arma::mat& >::type xtx(xtxSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type xtxinv0(xtxinv0SEXP);
     Rcpp::traits::input_parameter< arma::mat& >::type ql(qlSEXP);
     Rcpp::traits::input_parameter< arma::mat& >::type rtl(rtlSEXP);
     Rcpp::traits::input_parameter< arma::vec& >::type k(kSEXP);
     Rcpp::traits::input_parameter< arma::vec& >::type zt(ztSEXP);
     Rcpp::traits::input_parameter< arma::vec& >::type resids(residsSEXP);
+    Rcpp::traits::input_parameter< arma::vec& >::type sigma2(sigma2SEXP);
     Rcpp::traits::input_parameter< arma::vec& >::type s2(s2SEXP);
-    rcpp_result_gen = Rcpp::wrap(initlslinreg(y, xl, xtx, ql, rtl, k, zt, resids, s2));
+    Rcpp::traits::input_parameter< arma::vec& >::type loglike(loglikeSEXP);
+    rcpp_result_gen = Rcpp::wrap(initlslinreg(y, xl, xtx, xtxinv0, ql, rtl, k, zt, resids, sigma2, s2, loglike));
     return rcpp_result_gen;
 END_RCPP
 }
 // lslinreg
-int lslinreg(const arma::vec& dosage, const arma::vec& y, const arma::mat& xl, arma::mat& xr, arma::mat& xtx, arma::mat& bt, arma::mat& bb, const arma::mat& ql, arma::mat& qr, const arma::mat& rtl, arma::mat& rtr, arma::mat& rbr, arma::mat& h, const arma::mat& k, arma::mat& t, arma::mat& zb, arma::vec& resids, arma::vec& s2, arma::mat& xtxinv, arma::vec& std_err, arma::mat& xrs2, arma::vec& chi2);
-RcppExport SEXP _LinGxEScanR_lslinreg(SEXP dosageSEXP, SEXP ySEXP, SEXP xlSEXP, SEXP xrSEXP, SEXP xtxSEXP, SEXP btSEXP, SEXP bbSEXP, SEXP qlSEXP, SEXP qrSEXP, SEXP rtlSEXP, SEXP rtrSEXP, SEXP rbrSEXP, SEXP hSEXP, SEXP kSEXP, SEXP tSEXP, SEXP zbSEXP, SEXP residsSEXP, SEXP s2SEXP, SEXP xtxinvSEXP, SEXP std_errSEXP, SEXP xrs2SEXP, SEXP chi2SEXP) {
+int lslinreg(const arma::vec& dosage, const arma::vec& y, const arma::mat& xl, arma::mat& xr, arma::mat& xtx, arma::mat& bt, arma::mat& bb, const arma::mat& ql, arma::mat& qr, const arma::mat& rtl, arma::mat& rtr, arma::mat& rbr, arma::mat& h, const arma::mat& k, arma::mat& t, arma::mat& zb, arma::vec& resids, arma::vec& sigma2, arma::vec& s2, arma::mat& hws2, arma::mat& xtxinv, arma::vec& std_err, arma::mat& xrs2, arma::vec& chi2, arma::vec& loglike);
+RcppExport SEXP _LinGxEScanR_lslinreg(SEXP dosageSEXP, SEXP ySEXP, SEXP xlSEXP, SEXP xrSEXP, SEXP xtxSEXP, SEXP btSEXP, SEXP bbSEXP, SEXP qlSEXP, SEXP qrSEXP, SEXP rtlSEXP, SEXP rtrSEXP, SEXP rbrSEXP, SEXP hSEXP, SEXP kSEXP, SEXP tSEXP, SEXP zbSEXP, SEXP residsSEXP, SEXP sigma2SEXP, SEXP s2SEXP, SEXP hws2SEXP, SEXP xtxinvSEXP, SEXP std_errSEXP, SEXP xrs2SEXP, SEXP chi2SEXP, SEXP loglikeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -59,12 +62,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat& >::type t(tSEXP);
     Rcpp::traits::input_parameter< arma::mat& >::type zb(zbSEXP);
     Rcpp::traits::input_parameter< arma::vec& >::type resids(residsSEXP);
+    Rcpp::traits::input_parameter< arma::vec& >::type sigma2(sigma2SEXP);
     Rcpp::traits::input_parameter< arma::vec& >::type s2(s2SEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type hws2(hws2SEXP);
     Rcpp::traits::input_parameter< arma::mat& >::type xtxinv(xtxinvSEXP);
     Rcpp::traits::input_parameter< arma::vec& >::type std_err(std_errSEXP);
     Rcpp::traits::input_parameter< arma::mat& >::type xrs2(xrs2SEXP);
     Rcpp::traits::input_parameter< arma::vec& >::type chi2(chi2SEXP);
-    rcpp_result_gen = Rcpp::wrap(lslinreg(dosage, y, xl, xr, xtx, bt, bb, ql, qr, rtl, rtr, rbr, h, k, t, zb, resids, s2, xtxinv, std_err, xrs2, chi2));
+    Rcpp::traits::input_parameter< arma::vec& >::type loglike(loglikeSEXP);
+    rcpp_result_gen = Rcpp::wrap(lslinreg(dosage, y, xl, xr, xtx, bt, bb, ql, qr, rtl, rtr, rbr, h, k, t, zb, resids, sigma2, s2, hws2, xtxinv, std_err, xrs2, chi2, loglike));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -83,8 +89,8 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_LinGxEScanR_increment", (DL_FUNC) &_LinGxEScanR_increment, 1},
-    {"_LinGxEScanR_initlslinreg", (DL_FUNC) &_LinGxEScanR_initlslinreg, 9},
-    {"_LinGxEScanR_lslinreg", (DL_FUNC) &_LinGxEScanR_lslinreg, 22},
+    {"_LinGxEScanR_initlslinreg", (DL_FUNC) &_LinGxEScanR_initlslinreg, 12},
+    {"_LinGxEScanR_lslinreg", (DL_FUNC) &_LinGxEScanR_lslinreg, 25},
     {"_LinGxEScanR_initreg", (DL_FUNC) &_LinGxEScanR_initreg, 2},
     {NULL, NULL, 0}
 };

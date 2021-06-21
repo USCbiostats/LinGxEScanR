@@ -24,12 +24,17 @@ allocatelinregmem <- function(data, n, p, q) {
   t <- matrix(0., n, q)
   zt <- matrix(0, p, 1)
   zb <- matrix(0., q, 1)
+  resids0 <- numeric(n)
   resids <- numeric(n)
-  s2 <- numeric(1)
+  sigma2 <- numeric(2)
+  s2 <- numeric(2)
+  hws2 <- matrix(0., p + q, p + q)
+  xtxinv0 <- matrix(0., p, p)
   xtxinv <- matrix(0., p + q, p + q)
   std_err <- numeric(p + q)
   xrs2 <- matrix(0., q, q)
   chi2 <- numeric(1)
+  loglike <- numeric(2)
   
   return(list(y = y,
               xl = xl,
@@ -47,24 +52,32 @@ allocatelinregmem <- function(data, n, p, q) {
               t = t,
               zt = zt,
               zb = zb,
+              resids0 = resids0,
               resids = resids,
+              sigma2 = sigma2,
               s2 = s2,
+              hws2 = hws2,
               xtxinv = xtxinv,
+              xtxinv0 = xtxinv0,
               std_err = std_err,
               xrs2 = xrs2,
-              chi2 = chi2))
+              chi2 = chi2,
+              loglike = loglike))
 }
 
 initializelslinreg <- function(linregmem) {
   initlslinreg(y = linregmem$y,
                xl = linregmem$xl,
                xtx = linregmem$xtx,
+               xtxinv0 = linregmem$xtxinv0,
                ql = linregmem$ql,
                rtl = linregmem$rtl,
                k = linregmem$k,
                zt = linregmem$zt,
-               resids = linregmem$resids,
-               s2 = linregmem$s2)
+               resids = linregmem$resids0,
+               sigma2 = linregmem$sigma2,
+               s2 = linregmem$s2,
+               loglike = linregmem$loglike)
 }
 
 runlslinreg <- function(dosage, linregmem) {
@@ -85,18 +98,21 @@ runlslinreg <- function(dosage, linregmem) {
            t = linregmem$t,
            zb = linregmem$zb,
            resids = linregmem$resids,
+           sigma2 = linregmem$sigma2,
            s2 = linregmem$s2,
+           hws2 = linregmem$hws2,
            xtxinv = linregmem$xtxinv,
            std_err = linregmem$std_err,
            xrs2 = linregmem$xrs2,
-           chi2 = linregmem$chi2)
+           chi2 = linregmem$chi2,
+           loglike = linregmem$loglike)
 }
 
 runalllslinreg <- function(dosage, p0, p1, p2,
                            subindex, binarye, eindex0, eindex1,
                            minmac, maxmac,
-                           lslinregg, lslinregge, lslinreggxe, leveneresids,
-                           snpinfo, snplist, snpnum, outfile) {
+                           lslinregg, lslinregge, lslinreggxe, lslinregg0gxe,
+                           teststats, levene, snpinfo, snplist, snpnum, outfile) {
   subdose <- dosage[subindex]
   if (sum(subdose) < minmac || sum(subdose) > maxmac) {
     increment(snpnum)
@@ -114,6 +130,7 @@ runalllslinreg <- function(dosage, p0, p1, p2,
   runlslinreg(subdose, lslinregg)
   runlslinreg(subdose, lslinregge)
   runlslinreg(subdose, lslinreggxe)
+  runlslinreg(lslinreggxe$xr[,2], lslinregg0gxe)
   n <- length(subindex)
   aaf <- mean(subdose) / 2
   if (binarye) {
@@ -122,62 +139,71 @@ runalllslinreg <- function(dosage, p0, p1, p2,
     aaf0 <- mean(dosage[eindex0]) / 2
     aaf1 <- mean(dosage[eindex1]) / 2
   }
-  p_1 <- ncol(lslinregg$xl)
-  q_1 <- ncol(lslinregg$xr)
-  p_2 <- ncol(lslinregge$xl)
-  q_2 <- ncol(lslinregge$xr)
-  p_3 <- ncol(lslinreggxe$xl)
-  q_3 <- ncol(lslinreggxe$xr)
-  bg <- lslinregg$bb[1]
-  seg <- lslinregg$std_err[p_1 + 1]
-  tg <- lslinregg$bb[1] / lslinregg$std_err[p_1 + 1]
-  dfg <- n - p_1 - q_1
-  bge <- lslinregge$bb[1]
-  seg <- lslinregge$std_err[p_2 + 1]
-  tge <- lslinregge$bb[1] / lslinregge$std_err[p_2 + 1]
-  dfge <- n - p_2 - q_2
-  bggxe <- lslinreggxe$bb[1]
-  seggxe <- lslinreggxe$std_err[p_3 + 1]
-  tggxe <- lslinreggxe$bb[1] / lslinreggxe$std_err[p_3 + 1]
-  dfggxe <- n - p_3 - q_3
-  bgxe <- lslinreggxe$bb[2]
-  segxe <- lslinreggxe$std_err[p_3 + 2]
-  tgxe <- lslinreggxe$bb[2] / lslinreggxe$std_err[p_3 + 2]
-  dfgxe <- n - p_3 - q_3
-  varg <- lslinreggxe$xrs2[1,1]
-  vargxe <- lslinreggxe$xrs2[2,2]
-  covggxe <- lslinreggxe$xrs2[1,2]
-  chisqggxe <- lslinreggxe$chi2
-  dfchisqggxe <- 2L
-  w <- levenetest(dosage = subdose,
-                  p0 = subp0,
-                  p1 = subp1,
-                  p2 = subp2,
-                  res = leveneresids)
+  gostats <- gstats(teststats[[1]],
+                    lslinregg,
+                    lslinregg$loglike[1],
+                    lslinregg$resids0,
+                    lslinregg$xtxinv0,
+                    lslinregg$s2[1])
+  gestats <- gstats(teststats[[2]],
+                    lslinregge,
+                    lslinregge$loglike[1],
+                    lslinregge$resids0,
+                    lslinregge$xtxinv0,
+                    lslinregge$s2[1])
+  ggxestatsout <- gstats(teststats[[3]],
+                      lslinreggxe,
+                      lslinregg0gxe$loglike[2],
+                      lslinregg0gxe$resids,
+                      lslinregg0gxe$xtxinv,
+                      lslinregg0gxe$s2[2])
+  gxestatsout <- gxestats(teststats[[3]],
+                          lslinreggxe,
+                          lslinregge$loglike[2],
+                          lslinregge$resids,
+                          lslinregge$xtxinv,
+                          lslinregge$s2[2])
+  twodfstats <- ggxestats(teststats[[3]],
+                          lslinreggxe,
+                          lslinreggxe$loglike[1],
+                          lslinreggxe$resids0,
+                          lslinreggxe$xtxinv0,
+                          lslinreggxe$s2[1])
+  levenestats <- numeric(0)
+  if (levene[1] == TRUE) {
+    w <- levenetest(dosage = subdose,
+                    p0 = subp0,
+                    p1 = subp1,
+                    p2 = subp2,
+                    res = lslinregge$resids0)
+    levenestats <- c(levenestats, w$f, w$numer, w$denom, w$df1, w$df2)
+  }
+  if (levene[2] == TRUE) {
+    w <- levenetest(dosage = subdose,
+                    p0 = subp0,
+                    p1 = subp1,
+                    p2 = subp2,
+                    res = lslinregg$resids0)
+    levenestats <- c(levenestats, w$f, w$numer, w$denom, w$df1, w$df2)
+  }
   if (outfile == '') {
     if (binarye) {
       return (list(snpid, chromosome, location, reference, alternate,
-                   n, aaf, n0, aaf0, n1, aaf1, bg, seg, tg, dfg, bge, seg, tge, dfge,
-                   bggxe, seggxe, tggxe, dfggxe, bgxe, segxe, tgxe, dfgxe,
-                   chisqggxe, dfchisqggxe, varg, vargxe, covggxe,
-                   w$f, w$numer, w$denom, w$df1, w$df2))
+                   n, aaf, n0, aaf0, n1, aaf1, g0stats, gestats, ggxestatsout,
+                   gxestatsout, twodfstats, levenestats))
     }
     return (list(snpid, chromosome, location, reference, alternate,
-                 n, aaf, bg, seg, tg, dfg, bge, seg, tge, dfge,
-                 bggxe, seggxe, tggxe, dfggxe, bgxe, segxe, tgxe, dfgxe,
-                 chisqggxe, dfchisqggxe, varg, vargxe, covggxe,
-                 w$f, w$numer, w$denom, w$df1, w$df2))
+                 n, aaf, gostats, gestats, ggxestatsout,
+                 gxestatsout, twodfstats, levenestats))
   }
   snpout <- paste(snpid, chromosome, location, reference, alternate, sep = '\t')
   if (binarye)
     nfout <- paste(n, aaf, n0, aaf0, n1, aaf1,  sep = '\t')
   else
     nfout <- paste(n, aaf, sep = '\t')
-  statout <- paste(bg, seg, tg, dfg, bge, seg, tge, dfge,
-                   bggxe, seggxe, tggxe, dfggxe, bgxe, segxe, tgxe, dfgxe,
-                   chisqggxe, dfchisqggxe, varg, vargxe, covggxe,
-                   w$f, w$numer, w$denom, w$df1, w$df2, sep = '\t')
-  outline <- paste(snpout, nfout, statout, sep = '\t')
+
+  outline <- paste0(c(snpout, nfout, gostats, gestats, ggxestatsout,
+                   gxestatsout, twodfstats, levenestats),collapse = '\t')
   filecon <- file(outfile, open = "a")
   writeLines(outline, filecon)
   close(filecon)
@@ -281,6 +307,7 @@ subsetdata <- function(subdata, ginfo, mincov) {
                binarye = binarye))
 }
 
+
 #####################################################
 ###          Check for valid input values
 #####################################################
@@ -358,14 +385,25 @@ validateinput <- function(data, ginfo, outfile, skipfile,
 #' covdata <- readRDS(system.file("extdata/covdata.rds", package = "GxEScanR"))
 #'
 #' results <- gweis(data = covdata, ginfo = bdinfo)
-lingweis <- function(data, ginfo, snps, outfile, skipfile,
+lingweis <- function(data, ginfo, snps,
+                     gonly, ge, gxe, levene,
+                     outfile, skipfile,
                      minmaf, blksize) {
+  ## Set values to default for missing input values
   if (missing(data) == TRUE)
     stop("No subject data")
   if (missing(ginfo) == TRUE)
     stop("No genetic data, ginfo")
   if (missing(snps) == TRUE)
     snps = "all"
+  if (missing(gonly) == TRUE)
+    gonly = "Wald"
+  if (missing(ge) == TRUE)
+    ge = "Wald"
+  if (missing(gxe) == TRUE)
+    gxe = "WaldHW"
+  if (missing(levene) == TRUE)
+    levene = c(TRUE, FALSE)
   if (missing(outfile) == TRUE)
     outfile <- ""
   if (missing(skipfile) == TRUE)
@@ -374,10 +412,17 @@ lingweis <- function(data, ginfo, snps, outfile, skipfile,
     minmaf <- 0.
   if (missing(blksize))
     blksize <- 0L
+
+  ## Make sure input values are valid  
   validateinput(data, ginfo, outfile, skipfile, minmaf, blksize)
+  
+  ## Subset the SNPs for analysis
   snps <- subsetsnps(snps = snps,
                      snplist = ginfo$snps$snpid)
   snps <- (1:length(snps))[snps]
+  
+  ## Subset the subjects for analysis - complete covariate and SNP data
+  ## Also match subjects with values in genetic file
   subsetinfo <- subsetdata(subdata = data,
                             ginfo = ginfo,
                             mincov = 1L)
@@ -392,9 +437,21 @@ lingweis <- function(data, ginfo, snps, outfile, skipfile,
   }
   nsub <- nrow(data)
   ncov <- ncol(data)
-  
+
+  ## Determine test statistics to calculate
+  teststats <- vector("list", 3)
+  teststats[[1]] <- assignstats(gonly, "gonly")
+  teststats[[2]] <- assignstats(ge, "ge")
+  teststats[[3]] <- assignstats(gxe, "gxe")
+  if (is.logical(levene) == FALSE)
+    stop("levene must be a logical value")
+  if (length(levene) < 1 | length(levene) > 2)
+    stop("leven must be a logical vector of length 1 or 2")
+  if (length(levene) == 1)
+    levene <- rep(levene[1], 2)
+
   #####################################################
-  ###       Calcualte the minimum number
+  ###       Calculate the minimum number
   ###       of observed genes
   #####################################################
   minsum <- 2 * nrow(data) * minmaf
@@ -417,30 +474,17 @@ lingweis <- function(data, ginfo, snps, outfile, skipfile,
                                    n = nrow(data),
                                    p = ncol(data),
                                    q = 2L)
+  lslinregg0gxe <- allocatelinregmem(data = data,
+                                   n = nrow(data),
+                                   p = ncol(data),
+                                   q = 1L)
   initializelslinreg(lslinregg)
   initializelslinreg(lslinregge)
   initializelslinreg(lslinreggxe)
-  leveneresids <- numeric(nrow(data))
-  leveneresids[1:nrow(data)] <- lslinregge$resids
+  initializelslinreg(lslinregg0gxe)
 
-  if (outfile != '') {
-    snpcols <- paste("SNP", "CHR", "LOC", "REF", "ALT", sep = '\t')
-    if (subsetinfo$binarye == TRUE)
-      nfcols <- paste("n", "aaf", "n_e0", "aaf_e0", "n_e1", "aaf_e1", sep = '\t')
-    else
-      nfcols <- paste("n", "aaf", sep = '\t')
-    testcols <- paste("bg_g", "seg_g", "wtg_g", "dfg_g",
-                      "bg_ge", "seg_ge", "wtg_ge", "dfg_ge",
-                      "bg_gxe", "seg_gxe", "wtg_gxe", "dfg_gxe",
-                      "bgxe", "segxe", "wtgxe", "dfgxe",
-                      "wchisqggxe", "wdfggxe", "varg", "vargxe", "covggxe",
-                      "flevene", "fchisqnum", "fchisqden", "dfnum", "dfden",
-                      sep = '\t')
-    columnnames <- paste(snpcols, nfcols, testcols, sep = '\t')
-    filecon <- file(outfile, open = "w")
-    writeLines(columnnames, filecon)
-    close(filecon)
-  }
+  assigncolumnnames(outfile, subsetinfo$binarye, teststats, levene)
+
   snpnumber <- integer(1)
   snpnumber[1] <- 1L
   if (class(ginfo$additionalinfo) == "vcf-info") {
@@ -456,7 +500,9 @@ lingweis <- function(data, ginfo, snps, outfile, skipfile,
                         lslinregg = lslinregg,
                         lslinregge = lslinregge,
                         lslinreggxe = lslinreggxe,
-                        leveneresids = leveneresids,
+                        lslinregg0gxe = lslinregg0gxe,
+                        teststats = teststats,
+                        levene = levene,
                         snpinfo = ginfo$snps,
                         snplist = snps,
                         snpnum = snpnumber,
@@ -474,7 +520,9 @@ lingweis <- function(data, ginfo, snps, outfile, skipfile,
                        lslinregg = lslinregg,
                        lslinregge = lslinregge,
                        lslinreggxe = lslinreggxe,
-                       leveneresids = leveneresids,
+                       lslinregg0gxe = lslinregg0gxe,
+                       teststats = teststats,
+                       levene = levene,
                        snpinfo = ginfo$snps,
                        snplist = snps,
                        snpnum = snpnumber,

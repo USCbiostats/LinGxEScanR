@@ -20,21 +20,24 @@ int increment(arma::ivec &n) {
 int initlslinreg(const arma::vec &y,
                  const arma::mat &xl,
                  arma::mat &xtx,
+                 arma::mat &xtxinv0,
                  arma::mat &ql,
                  arma::mat &rtl,
                  arma::vec &k,
                  arma::vec &zt,
                  arma::vec &resids,
-                 arma::vec &s2) {
-  double sigma2;
-  
+                 arma::vec &sigma2,
+                 arma::vec &s2,
+                 arma::vec &loglike) {
   qr_econ(ql, rtl, xl);
   zt = ql.t() * y;
   solve(k, rtl, zt);
   resids = y - xl * k;
-  sigma2 = arma::dot(resids, resids) / xl.n_rows;
-  s2[0] = sigma2 * xl.n_rows / (xl.n_rows - xl.n_cols);
+  sigma2[0] = arma::dot(resids, resids) / xl.n_rows;
+  s2[0] = sigma2[0] * xl.n_rows / (xl.n_rows - xl.n_cols);
   xtx.submat(0, 0, xl.n_cols - 1, xl.n_cols - 1) = trans(xl) * xl;
+  xtxinv0 = pinv(xtx.submat(0, 0, xl.n_cols - 1, xl.n_cols - 1));
+  loglike[0] = -0.5 * xl.n_rows * (log(sigma2[0]) + LOG2PIP1);
 
   return 0;
 }
@@ -57,11 +60,14 @@ int lslinreg(const arma::vec &dosage,
              arma::mat &t,
              arma::mat &zb,
              arma::vec &resids,
+             arma::vec &sigma2,
              arma::vec &s2,
+             arma::mat &hws2,
              arma::mat &xtxinv,
              arma::vec &std_err,
              arma::mat &xrs2,
-             arma::vec &chi2) {
+             arma::vec &chi2,
+             arma::vec &loglike) {
   int c1, c2, r1, r2;
 
   xr.col(0) = dosage;
@@ -76,8 +82,11 @@ int lslinreg(const arma::vec &dosage,
   bt = k - h*bb;
   
   resids = y - xl*bt - xr*bb;
-  s2[0] = std::inner_product(resids.begin(), resids.end(), resids.begin(), 0.0);
-  s2[0] /= (xl.n_rows - xl.n_cols - xr.n_cols);
+  sigma2[1] = std::inner_product(resids.begin(), resids.end(), resids.begin(), 0.0);
+  s2[1] = sigma2[1] / (xl.n_rows - xl.n_cols - xr.n_cols);
+  sigma2[1] /= xl.n_rows;
+
+  loglike[1] = -0.5 * xl.n_rows * (log(sigma2[1]) + LOG2PIP1);
   
   // Building the xtx matrix  
   r1 = xl.n_cols;
@@ -89,10 +98,21 @@ int lslinreg(const arma::vec &dosage,
   xtx.submat(c1, r1, c2, r2) = trans(xtx.submat(r1, c1, r2, c2));
   xtx.submat(r1, r1, r2, r2) = trans(xr) * xr;
   
-  xtxinv = s2[0] * pinv(xtx);
-  std_err = arma::sqrt(arma::diagvec(xtxinv));  
-  xrs2 = xtxinv.submat(r1,r1,r2,r2);
+  xtxinv = pinv(xtx);
+  std_err = arma::sqrt(s2[1] * arma::diagvec(xtxinv));
+  xrs2 = s2[1] * xtxinv.submat(r1,r1,r2,r2);
   chi2 = trans(bb) * pinv(xrs2) * bb;
+  
+  hws2.submat(0, 0, xl.n_cols - 1, xl.n_cols - 1)
+    = xl.t() * arma::diagmat(resids % resids) * xl;
+  hws2.submat(0, xl.n_cols, xl.n_cols - 1, xtx.n_cols - 1)
+    = xl.t() * arma::diagmat(resids % resids) * xr;
+  hws2.submat(xl.n_cols, 0, xtx.n_cols - 1, xl.n_cols - 1)
+    = hws2.submat(0, xl.n_cols, xl.n_cols - 1, xtx.n_cols - 1).t();
+  hws2.submat(xl.n_cols, xl.n_cols, xtx.n_cols - 1, xtx.n_cols - 1)
+    = xr.t() * arma::diagmat(resids % resids) * xr;
+  hws2.submat(0, 0, xtx.n_cols - 1, xtx.n_cols - 1) = xtxinv * hws2 * xtxinv;
+
   return 0;
 }
 
