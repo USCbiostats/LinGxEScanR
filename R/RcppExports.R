@@ -9,6 +9,34 @@ initlslinreg <- function(y, xl, xtx, xtxinv0, ql, rtl, k, zt, resids, sigma2, s2
     .Call(`_LinGxEScanR_initlslinreg`, y, xl, xtx, xtxinv0, ql, rtl, k, zt, resids, sigma2, s2, loglike)
 }
 
+lslinregfit <- function(dosage, y, xl, xr, bt, bb, ql, qr, rtl, rtr, rbr, h, k, t, zb) {
+    .Call(`_LinGxEScanR_lslinregfit`, dosage, y, xl, xr, bt, bb, ql, qr, rtl, rtr, rbr, h, k, t, zb)
+}
+
+lslinregresiduals <- function(y, xl, xr, bt, bb, resids) {
+    .Call(`_LinGxEScanR_lslinregresiduals`, y, xl, xr, bt, bb, resids)
+}
+
+lslinregsigma2 <- function(xl, xr, resids, sigma2, s2, loglike) {
+    .Call(`_LinGxEScanR_lslinregsigma2`, xl, xr, resids, sigma2, s2, loglike)
+}
+
+lslinregxtx <- function(xl, xr, xtx) {
+    .Call(`_LinGxEScanR_lslinregxtx`, xl, xr, xtx)
+}
+
+lslinregxtxinv <- function(xtx, xtxinv) {
+    .Call(`_LinGxEScanR_lslinregxtxinv`, xtx, xtxinv)
+}
+
+lslinregwaldtest <- function(xl, xr, bb, s2, xtxinv, std_err, xrs2, chi2) {
+    .Call(`_LinGxEScanR_lslinregwaldtest`, xl, xr, bb, s2, xtxinv, std_err, xrs2, chi2)
+}
+
+lslinreghwtest <- function(xl, xr, resids, xtxinv, s2a, hws2) {
+    .Call(`_LinGxEScanR_lslinreghwtest`, xl, xr, resids, xtxinv, s2a, hws2)
+}
+
 lslinreg <- function(dosage, y, xl, xr, xtx, bt, bb, ql, qr, rtl, rtr, rbr, h, k, t, zb, resids, sigma2, s2, hws2, xtxinv, std_err, xrs2, chi2, loglike) {
     .Call(`_LinGxEScanR_lslinreg`, dosage, y, xl, xr, xtx, bt, bb, ql, qr, rtl, rtr, rbr, h, k, t, zb, resids, sigma2, s2, hws2, xtxinv, std_err, xrs2, chi2, loglike)
 }
