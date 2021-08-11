@@ -185,12 +185,12 @@ runalllslinreg <- function(dosage, p0, p1, p2,
     return (NA)
   }
   if (binarye == TRUE) {
-    mac <- sum(subdose[eindex0])
+    mac <- sum(dosage[eindex0])
     if (mac < 2 || mac > 2*length(subdose) - 2) {
       increment(snpnum)
       return (NA)
     }
-    mac <- sum(subdose[eindex1])
+    mac <- sum(dosage[eindex1])
     if (mac < 2 || mac > 2*length(subdose) - 2) {
       increment(snpnum)
       return (NA)
