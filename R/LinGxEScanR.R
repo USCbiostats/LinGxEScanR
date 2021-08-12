@@ -620,5 +620,21 @@ lingweis <- function(data, ginfo, snps,
                        snpnum = snpnumber,
                        outfile = outfile)
   }
+  if (outfile == '') {
+    m <- matrix("", length(result), length(columnnames))
+    colnames(m) <- columnnames
+    for (i in 1:length(result)) {
+      if (length(result[[i]]) == 1)
+        m[i,] <- NA
+      else
+        m[i,] <- unlist(result[[i]])
+    }
+    m <- as.data.frame(m)
+    m <- m[is.na(m$SNP) == FALSE,]
+    for (i in 6:ncol(m))
+      m[,i] <- as.numeric(m[,i])
+    return(m)
+  }
+
   return (result)
 }

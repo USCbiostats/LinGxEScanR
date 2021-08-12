@@ -75,11 +75,13 @@ assigncolumnnames <- function(outfile, binarye, teststats, levene) {
   if (levene[2] == TRUE)
     levenecols <- c(levenecols, "f_levene_ne", "chisq_num_ne", "chisq_den_ne",
                     "df_num_ne", "df_den_ne")
-  out.columnnames <- paste0(c(snpcols, nfcols, statcols, levenecols), collapse = '\t')
   if (outfile != '') {
+    out.columnnames <- paste0(c(snpcols, nfcols, statcols, levenecols), collapse = '\t')
     filecon <- file(outfile, open = "w")
     writeLines(out.columnnames, filecon)
     close(filecon)
+  } else {
+    out.columnnames <- c(snpcols, nfcols, statcols, levenecols)
   }
   return(out.columnnames)
 }
