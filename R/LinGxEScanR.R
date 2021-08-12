@@ -271,7 +271,7 @@ runalllslinreg <- function(dosage, p0, p1, p2,
   if (outfile == '') {
     if (binarye) {
       return (list(snpid, chromosome, location, reference, alternate,
-                   n, aaf, n0, aaf0, n1, aaf1, g0stats, gestats, ggxestatsout,
+                   n, aaf, n0, aaf0, n1, aaf1, gostats, gestats, ggxestatsout,
                    gxestatsout, twodfstats, levenestats))
     }
     return (list(snpid, chromosome, location, reference, alternate,
