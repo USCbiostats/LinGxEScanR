@@ -23,13 +23,13 @@ respectively.}
 on. Null value indicates to perform function all
 all SNPs. Default NULL.}
 
-\item{...}{Additional parameters needed by the
-user supplied function}
-
-\item{blksize}{Number of lines to read in on
+\item{blksz}{Number of lines to read in on
 each iteration. A larger number uses more memory
 but can reduce run time. Maximum value 1000.
 Default 100.}
+
+\item{...}{Additional parameters needed by the
+user supplied function}
 }
 \value{
 A list with length equal to the number

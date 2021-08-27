@@ -105,7 +105,7 @@ bdapply2 <- function(bdinfo, func, snps, ...) {
 #' @param snps List of SNPs to perform the function
 #' on. Null value indicates to perform function all
 #' all SNPs. Default NULL.
-#' @param blksize Number of lines to read in on
+#' @param blksz Number of lines to read in on
 #' each iteration. A larger number uses more memory
 #' but can reduce run time. Maximum value 1000.
 #' Default 100.

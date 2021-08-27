@@ -1,10 +1,8 @@
 #' @useDynLib LinGxEScanR, .registration = TRUE
 #' @importFrom Rcpp sourceCpp
+#' @importFrom stats complete.cases
+#' @importFrom prodlim row.match
 NULL
-
-getdosages <- function(dosage, p0, p1, p2) {
-  return (dosage)
-}
 
 allocatelinregmem <- function(data, n, p, q) {
   y <- data[,1]
@@ -35,7 +33,7 @@ allocatelinregmem <- function(data, n, p, q) {
   xrs2 <- matrix(0., q, q)
   chi2 <- numeric(1)
   loglike <- numeric(2)
-  s2a <- matrix(0., n, n)
+  s2a <- numeric(n)
   
   return(list(y = y,
               xl = xl,
@@ -436,13 +434,40 @@ validateinput <- function(data, ginfo, outfile, skipfile,
 #'
 #' Run a linear gweis using genetic data from a binary dosage or vcf file
 #' @param data Data frame containing the subject ID, phenotype
-#' and covariates
+#' and covariates. The first column must be a character value that
+#' contains the subject ID. The second column must be a numeric value and
+#' contain the outcome. The remaining columns must be numeric and contain
+#' the covariates to use in the analysis. The value in the last column is
+#' the covariate that will be used in the gene-environment interaction.
 #' @param ginfo Information about the binary dosage or vcf file returned
 #' from the BinaryDosage::getbdinfo or BinaryDosage::getvcfinfo routine
 #' @param snps The SNPs to be used in the scan. This may be an integer
 #' vector indicate which SNPs to use in the binary dosage file or a 
 #' character vector of the SNP IDs to use. The value may also be "all",
 #' indicating to use all SNPs. The default value is "all".
+#' @param gonly The tests to perform on the beta_g parametetfor the model
+#' with the gene and all the covariates except the one used in the
+#' gene-environement interaction. The value must be a character array
+#' containing any or all of the following values, "fit", "lrt", "score",
+#' "Wald", and "WaldHW". This value can also be "all" or "none".
+#' @param ge The tests to perform on the beta_g parameter from the model
+#' with the all the covariates and the gene. The value has the sames
+#' requirements as the gonly value.
+#' @param ggxe The test to perform on the beta_g parameter from the model
+#' that contains all the covariates, the gene, and the gene-environment
+#' interaction. The values has the same requirements as the gonly value.
+#' @param gxe The test to perform on the beta_gxe parameter from the model
+#' that contains all the covariates, the gene, and the gene-environment
+#' interaction. The values has the same requirements as the gonly value.
+#' @param twodf The test two degree of tests to perform on the beta_g and
+#' beta_gxe parameters from the model that contains all the covariates,
+#' the gene, and the gene-environment interaction. The values has the same
+#' requirements as the gonly value.
+#' @param levene Logical array indicating which Levene tests to run. The
+#' first value indicates to run the Levene test with the interaction
+#' covariate and the second value indicates to run the Levene test without
+#' the interaction covariate. This value may be a logical array of length
+#' one or two. If only one value is passed it is used for both tests. 
 #' @param outfile The file name for the results Can be blank.
 #' If the value is "", the results are returned as a data frame. Default
 #' value is ""

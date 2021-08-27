@@ -198,6 +198,7 @@ twodfstats <- function(teststats, lslinregout, loglike0, resids0, xtxinv0, s2) {
 
   if (teststats[5] == TRUE) {
     hw2df <- t(lslinregout$bb) %*% solve(lslinregout$hws2[cols,cols]) %*% lslinregout$bb
+    hw2df <- 1.
     outstats <- c(outstats, hw2df, lslinregout$hws2[p+1,p+1],
                   lslinregout$hws2[p+q,p+q], lslinregout$hws2[p+1,p+q])
   }

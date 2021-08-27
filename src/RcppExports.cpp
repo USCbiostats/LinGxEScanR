@@ -145,7 +145,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // lslinreghwtest
-int lslinreghwtest(const arma::mat& xl, const arma::mat& xr, const arma::vec& resids, const arma::mat& xtxinv, arma::mat& s2a, arma::mat& hws2);
+int lslinreghwtest(const arma::mat& xl, const arma::mat& xr, const arma::vec& resids, const arma::mat& xtxinv, arma::vec& s2a, arma::mat& hws2);
 RcppExport SEXP _LinGxEScanR_lslinreghwtest(SEXP xlSEXP, SEXP xrSEXP, SEXP residsSEXP, SEXP xtxinvSEXP, SEXP s2aSEXP, SEXP hws2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -154,7 +154,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat& >::type xr(xrSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type resids(residsSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type xtxinv(xtxinvSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type s2a(s2aSEXP);
+    Rcpp::traits::input_parameter< arma::vec& >::type s2a(s2aSEXP);
     Rcpp::traits::input_parameter< arma::mat& >::type hws2(hws2SEXP);
     rcpp_result_gen = Rcpp::wrap(lslinreghwtest(xl, xr, resids, xtxinv, s2a, hws2));
     return rcpp_result_gen;

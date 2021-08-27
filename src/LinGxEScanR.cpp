@@ -153,7 +153,7 @@ int lslinreghwtest(const arma::mat &xl,
                    const arma::mat &xr,
                    const arma::vec &resids,
                    const arma::mat &xtxinv,
-                   arma::mat &s2a,
+                   arma::vec &s2a,
                    arma::mat &hws2) {
   int r1, r2, r3;
   
@@ -161,12 +161,12 @@ int lslinreghwtest(const arma::mat &xl,
   r2 = xl.n_cols;
   r3 = xtxinv.n_cols - 1;
   
-  s2a.diag() = resids % resids;
+  s2a = resids % resids;
   
-  hws2.submat(0, 0, r1, r1) = xl.t() * s2a * xl;
-  hws2.submat(0, r2, r1, r3) = xl.t() * s2a * xr;
+  hws2.submat(0, 0, r1, r1) = xl.t() * arma::diagmat(s2a) * xl;
+  hws2.submat(0, r2, r1, r3) = xl.t() * arma::diagmat(s2a) * xr;
   hws2.submat(r2, 0, r3, r1) = hws2.submat(0, r2, r1, r3).t();
-  hws2.submat(r2, r2, r3, r3) = xr.t() * s2a * xr;
+  hws2.submat(r2, r2, r3, r3) = xr.t() * arma::diagmat(s2a) * xr;
   hws2.submat(0, 0, r3, r3) = xtxinv * hws2 * xtxinv;
   
   return 0;
