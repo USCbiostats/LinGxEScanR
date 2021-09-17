@@ -29,6 +29,10 @@ lslinregxtxinv <- function(xtx, xtxinv) {
     .Call(`_LinGxEScanR_lslinregxtxinv`, xtx, xtxinv)
 }
 
+lslinreguut <- function(xl, xr, resids, s2a, uut) {
+    .Call(`_LinGxEScanR_lslinreguut`, xl, xr, resids, s2a, uut)
+}
+
 lslinregwaldtest <- function(xl, xr, bb, s2, xtxinv, std_err, xrs2, chi2) {
     .Call(`_LinGxEScanR_lslinregwaldtest`, xl, xr, bb, s2, xtxinv, std_err, xrs2, chi2)
 }

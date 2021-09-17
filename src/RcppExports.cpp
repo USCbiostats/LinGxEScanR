@@ -126,6 +126,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// lslinreguut
+int lslinreguut(const arma::mat& xl, const arma::mat& xr, const arma::vec& resids, arma::vec& s2a, arma::mat& uut);
+RcppExport SEXP _LinGxEScanR_lslinreguut(SEXP xlSEXP, SEXP xrSEXP, SEXP residsSEXP, SEXP s2aSEXP, SEXP uutSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type xl(xlSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type xr(xrSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type resids(residsSEXP);
+    Rcpp::traits::input_parameter< arma::vec& >::type s2a(s2aSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type uut(uutSEXP);
+    rcpp_result_gen = Rcpp::wrap(lslinreguut(xl, xr, resids, s2a, uut));
+    return rcpp_result_gen;
+END_RCPP
+}
 // lslinregwaldtest
 int lslinregwaldtest(const arma::mat& xl, const arma::mat& xr, const arma::mat& bb, const arma::vec& s2, const arma::mat& xtxinv, arma::vec& std_err, arma::mat& xrs2, arma::vec& chi2);
 RcppExport SEXP _LinGxEScanR_lslinregwaldtest(SEXP xlSEXP, SEXP xrSEXP, SEXP bbSEXP, SEXP s2SEXP, SEXP xtxinvSEXP, SEXP std_errSEXP, SEXP xrs2SEXP, SEXP chi2SEXP) {
@@ -216,6 +231,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_LinGxEScanR_lslinregsigma2", (DL_FUNC) &_LinGxEScanR_lslinregsigma2, 6},
     {"_LinGxEScanR_lslinregxtx", (DL_FUNC) &_LinGxEScanR_lslinregxtx, 3},
     {"_LinGxEScanR_lslinregxtxinv", (DL_FUNC) &_LinGxEScanR_lslinregxtxinv, 2},
+    {"_LinGxEScanR_lslinreguut", (DL_FUNC) &_LinGxEScanR_lslinreguut, 5},
     {"_LinGxEScanR_lslinregwaldtest", (DL_FUNC) &_LinGxEScanR_lslinregwaldtest, 8},
     {"_LinGxEScanR_lslinreghwtest", (DL_FUNC) &_LinGxEScanR_lslinreghwtest, 6},
     {"_LinGxEScanR_lslinreg", (DL_FUNC) &_LinGxEScanR_lslinreg, 25},

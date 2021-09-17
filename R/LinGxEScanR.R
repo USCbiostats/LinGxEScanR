@@ -26,6 +26,8 @@ allocatelinregmem <- function(data, n, p, q) {
   resids <- numeric(n)
   sigma2 <- numeric(2)
   s2 <- numeric(2)
+  s2a <- numeric(n)
+  uut <- matrix(0, p + q, p + q)
   hws2 <- matrix(0., p + q, p + q)
   xtxinv0 <- matrix(0., p, p)
   xtxinv <- matrix(0., p + q, p + q)
@@ -33,7 +35,6 @@ allocatelinregmem <- function(data, n, p, q) {
   xrs2 <- matrix(0., q, q)
   chi2 <- numeric(1)
   loglike <- numeric(2)
-  s2a <- numeric(n)
   
   return(list(y = y,
               xl = xl,
@@ -56,6 +57,7 @@ allocatelinregmem <- function(data, n, p, q) {
               sigma2 = sigma2,
               s2 = s2,
               s2a = s2a,
+              uut = uut,
               hws2 = hws2,
               xtxinv = xtxinv,
               xtxinv0 = xtxinv0,
@@ -204,13 +206,13 @@ runalllslinreg <- function(dosage, p0, p1, p2,
   alternate <- snpinfo$alternate[snplist[snpnum]]
   increment(snpnum)
   lslinregg$xr[,1] <- subdose
-  runlslinreg2(subdose, lslinregg, codemask[[1]])
+  runlslinreg2(subdose, lslinregg, codemask$gonly)
   lslinregge$xr[,1] <- subdose
-  runlslinreg2(subdose, lslinregge, codemask[[2]])
+  runlslinreg2(subdose, lslinregge, codemask$ge)
   lslinreggxe$xr[,1] <- subdose
   lslinreggxe$xr[,2] <- lslinreggxe$xl[,ncol(lslinreggxe$xl)] * subdose
-  runlslinreg2(subdose, lslinreggxe, codemask[[3]])
-  runlslinreg2(lslinreggxe$xr[,2], lslinregg0gxe, codemask[[4]])
+  runlslinreg2(subdose, lslinreggxe, codemask$gxe)
+  runlslinreg2(lslinreggxe$xr[,2], lslinregg0gxe, codemask$g0gxe)
   n <- length(subindex)
   aaf <- mean(subdose) / 2
   if (binarye) {
@@ -219,31 +221,31 @@ runalllslinreg <- function(dosage, p0, p1, p2,
     aaf0 <- mean(dosage[eindex0]) / 2
     aaf1 <- mean(dosage[eindex1]) / 2
   }
-  gostats <- gstats(teststats[[1]],
+  gostats <- gstats(teststats$gonly,
                     lslinregg,
                     lslinregg$loglike[1],
                     lslinregg$resids0,
                     lslinregg$xtxinv0,
                     lslinregg$s2[1])
-  gestats <- gstats(teststats[[2]],
+  gestats <- gstats(teststats$ge,
                     lslinregge,
                     lslinregge$loglike[1],
                     lslinregge$resids0,
                     lslinregge$xtxinv0,
                     lslinregge$s2[1])
-  ggxestatsout <- gstats(teststats[[3]],
+  ggxestatsout <- gstats(teststats$ggxe,
                       lslinreggxe,
                       lslinregg0gxe$loglike[2],
                       lslinregg0gxe$resids,
                       lslinregg0gxe$xtxinv,
                       lslinregg0gxe$s2[2])
-  gxestatsout <- gxestats(teststats[[4]],
+  gxestatsout <- gxestats(teststats$gxe,
                           lslinreggxe,
                           lslinregge$loglike[2],
                           lslinregge$resids,
                           lslinregge$xtxinv,
                           lslinregge$s2[2])
-  twodfstats <- twodfstats(teststats[[5]],
+  twodfstats <- twodfstats(teststats$twodf,
                            lslinreggxe,
                            lslinreggxe$loglike[1],
                            lslinreggxe$resids0,
@@ -550,7 +552,8 @@ lingweis <- function(data, ginfo, snps,
   ncov <- ncol(data)
 
   ## Determine test statistics to calculate
-  teststats <- vector("list", 3)
+  teststats <- vector("list", 5)
+  names(teststats) <- c("gonly", "ge", "ggxe", "gxe", "twodf")
   teststats[[1]] <- assignstats(gonly, "gonly")
   teststats[[2]] <- assignstats(ge, "ge")
   teststats[[3]] <- assignstats(ggxe, "ggxe")

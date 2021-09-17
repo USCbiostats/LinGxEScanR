@@ -3,22 +3,25 @@
 # Returns a logical vector
 
 assignstats <- function(statlist, modelname) {
+  teststats <- rep(FALSE, 6)
+  names(teststats) <- c("fit", "lrt", "score", "scoreHW", "Wald", "WaldHW")
   if (is.character(statlist) == FALSE)
     stop(paste(modelname, "must be a character vector"))
   if (length(statlist) == 0)
-    return (rep(FALSE, 5))
+    return (teststats)
   if (length(statlist) == 1) {
-    if(statlist == "all")
-      return (rep(TRUE, 5))
+    if(statlist == "all") {
+      teststats[1:6] <- TRUE
+      return (teststats)
+    }
     if (statlist == "" | statlist == "none")
-      return (rep(FALSE, 5))
+      return (teststats)
   }
-  statsidx <- match(statlist, c("fit", "lrt", "score", "Wald", "WaldHW"))
+  statsidx <- match(statlist, names(teststats))
   if (all(is.na(statsidx) == FALSE) == FALSE)
     stop(paste("Unknown values in", modelname))
-  teststats <- rep(FALSE, 5)
   teststats[statsidx] <- TRUE
-  teststats[1] <- teststats[1] || teststats[2] || teststats[4] || teststats[5]
+  teststats[1] <- teststats[1] || teststats[2] || teststats[5] || teststats[6]
   return(teststats)
 }
 
@@ -29,24 +32,28 @@ assigncolumnnames <- function(outfile, binarye, teststats, levene) {
     nfcols <- c(nfcols, "n_e0", "aaf_e0", "n_e1", "aaf_e1")
   statcols <- character(0)
   modelname <- c("go", "ge", "gxe")
-  statnameg <- vector("list", 5)
+  statnameg <- vector("list", 6)
+#  names(statnameg) <- c("beta", "lrt", "score", "scoreHW", "Wald", "WaldHW")
   statnameg[[1]] <- "bg"
   statnameg[[2]] <- "lrt_chi_g"
   statnameg[[3]] <- "score_z_g"
-  statnameg[[4]] <- c("wald_se_g", "wald_t_g", "wald_df_g")
-  statnameg[[5]] <- c("waldhw_se_g", "waldhw_z_g")
-  statnamegxe <- vector("list", 5)
+  statnameg[[4]] <- "scorehw_z_g"
+  statnameg[[5]] <- c("wald_se_g", "wald_t_g", "wald_df_g")
+  statnameg[[6]] <- c("waldhw_se_g", "waldhw_z_g")
+  statnamegxe <- vector("list", 6)
   statnamegxe[[1]] <- "bgxe"
   statnamegxe[[2]] <- "lrt_chi_gxe"
   statnamegxe[[3]] <- "score_z_gxe"
-  statnamegxe[[4]] <- c("wald_se_gxe", "wald_t_gxe", "wald_df_gxe")
-  statnamegxe[[5]] <- c("waldhw_se_gxe", "waldhw_z_gxe")
+  statnamegxe[[4]] <- "scorehw_z_gxe"
+  statnamegxe[[5]] <- c("wald_se_gxe", "wald_t_gxe", "wald_df_gxe")
+  statnamegxe[[6]] <- c("waldhw_se_gxe", "waldhw_z_gxe")
   statname2df <- vector("list", 5)
   statname2df[[1]] <- NA
   statname2df[[2]] <- "lrt_chi2df"
   statname2df[[3]] <- "score_chi2df"
-  statname2df[[4]] <- c("wald_chi2df", "wald_var_g", "wald_var_gxe", "wald_cov_ggxe")
-  statname2df[[5]] <- c("waldhw_chi2df", "waldhw_var_g", "waldhw_var_gxe", "waldhw_cov_ggxe")
+  statname2df[[4]] <- "scorehw_chi2df"
+  statname2df[[5]] <- c("wald_chi2df", "wald_var_g", "wald_var_gxe", "wald_cov_ggxe")
+  statname2df[[6]] <- c("waldhw_chi2df", "waldhw_var_g", "waldhw_var_gxe", "waldhw_cov_ggxe")
   for (i in 1:3) {
     if (all(teststats[[i]] == FALSE) == TRUE)
       next
@@ -108,19 +115,34 @@ gstats <- function(teststats, lslinregout, loglike0, resids0, xtxinv0, s2) {
     cols <- rep(TRUE,p+q)
     cols[p+1] <- FALSE
     i2.1 <- (lslinregout$xtx[p+1, p+1] - lslinregout$xtx[p+1, cols] %*% xtxinv0 %*% lslinregout$xtx[cols, p+1]) / s2
-    l2 <- sum((resids0*lslinregout$xr[,1])) / s2
+    l2 <- sum(resids0*lslinregout$xr[,1]) / s2
     scoreg <- l2 / sqrt(i2.1)
     outstats <- c(outstats, scoreg)
   }
   
   if (teststats[4] == TRUE) {
+    cols <- rep(TRUE,p+q)
+    cols[p+1] <- FALSE
+    lslinreguut(xl = lslinregout$xl,
+                xr = lslinregout$xr,
+                resids = resids0,
+                s2a = lslinregout$s2a,
+                uut = lslinregout$uut)
+    cmat <- matrix(0, 1, p+q)
+    cmat[1,cols] <- -lslinregout$xtx[p+1, cols] %*% xtxinv0
+    cmat[1,p+1] <- 1
+    scorehwg <- sum(resids0*lslinregout$xr[,1]) / sqrt(cmat %*% lslinregout$uut %*% t(cmat))
+    outstats <- c(outstats, scorehwg)
+  }
+  
+  if (teststats[5] == TRUE) {
     seg <- lslinregout$std_err[p + 1]
     tg <- bg / seg
     dfg <- n - p - q
     outstats <- c(outstats, seg, tg, dfg)
   }
   
-  if (teststats[5] == TRUE) {
+  if (teststats[6] == TRUE) {
     seg <- sqrt(lslinregout$hws2[p + 1, p + 1])
     zg <- bg / seg
     outstats <- c(outstats, seg, zg)
@@ -155,13 +177,26 @@ gxestats <- function(teststats, lslinregout, loglike0, resids0, xtxinv0, s2) {
   }
   
   if (teststats[4] == TRUE) {
+    lslinreguut(xl = lslinregout$xl,
+                xr = lslinregout$xr,
+                resids = resids0,
+                s2a = lslinregout$s2a,
+                uut = lslinregout$uut)
+    cmat <- matrix(0, 1, p+q)
+    cmat[1,1:(p+1)] <- -lslinregout$xtx[p+2, 1:(p+1)] %*% xtxinv0
+    cmat[1,(p+q)] <- 1
+    scorehwgxe <- sum(resids0*lslinregout$xr[,2]) / sqrt(cmat %*% lslinregout$uut %*% t(cmat))
+    outstats <- c(outstats, scorehwgxe)
+  }
+  
+  if (teststats[5] == TRUE) {
     segxe <- lslinregout$std_err[p + 2]
     tgxe <- bgxe / segxe
     dfgxe <- n - p - q
     outstats <- c(outstats, segxe, tgxe, dfgxe)
   }
   
-  if (teststats[5] == TRUE) {
+  if (teststats[6] == TRUE) {
     segxe <- sqrt(lslinregout$hws2[p + 2, p + 2])
     zgxe <- bgxe / segxe
     outstats <- c(outstats, segxe, zgxe)
@@ -192,11 +227,27 @@ twodfstats <- function(teststats, lslinregout, loglike0, resids0, xtxinv0, s2) {
   }
   
   if (teststats[4] == TRUE) {
+    lslinreguut(xl = lslinregout$xl,
+                xr = lslinregout$xr,
+                resids = resids0,
+                s2a = lslinregout$s2a,
+                uut = lslinregout$uut)
+    cmat <- matrix(0, 2, p+q)
+    cmat[1:2,1:p] <- -lslinregout$xtx[(p+1):(p+2), 1:p] %*% xtxinv0
+    cmat[1:2,(p+1):(p+2)] <- diag(1,2)
+    uhwg <- matrix(0,2,1)
+    uhwg[1,1] <- sum(resids0*lslinregout$xr[,1])
+    uhwg[2,1] <- sum(resids0*lslinregout$xr[,2])
+    score2df <- t(uhwg) %*% solve(cmat %*% lslinregout$uut %*% t(cmat)) %*% uhwg
+    outstats <- c(outstats, score2df)
+  }
+  
+  if (teststats[5] == TRUE) {
     outstats <- c(outstats, lslinregout$chi2, lslinregout$xrs2[1,1],
                   lslinregout$xrs2[2,2], lslinregout$xrs2[1,2])
   }
 
-  if (teststats[5] == TRUE) {
+  if (teststats[6] == TRUE) {
     hw2df <- t(lslinregout$bb) %*% solve(lslinregout$hws2[cols,cols]) %*% lslinregout$bb
     outstats <- c(outstats, hw2df, lslinregout$hws2[p+1,p+1],
                   lslinregout$hws2[p+q,p+q], lslinregout$hws2[p+1,p+q])
@@ -205,36 +256,47 @@ twodfstats <- function(teststats, lslinregout, loglike0, resids0, xtxinv0, s2) {
 }
 
 assigntests <- function(teststats) {
-  testmask <- vector("list", 7)
+  testmask <- vector("list", 8)
   testmask[[1]] <- c( TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE)
   testmask[[2]] <- c( TRUE,  TRUE,  TRUE, FALSE, FALSE, FALSE, FALSE)
   testmask[[3]] <- c(FALSE, FALSE, FALSE,  TRUE, FALSE, FALSE, FALSE)
-  testmask[[4]] <- c( TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE, FALSE)
-  testmask[[5]] <- c( TRUE,  TRUE,  TRUE,  TRUE,  TRUE, FALSE,  TRUE)
-  testmask[[6]] <- c( TRUE,  TRUE,  TRUE, FALSE, FALSE, FALSE, FALSE)
-  testmask[[7]] <- c( TRUE,  TRUE,  TRUE,  TRUE,  TRUE, FALSE, FALSE)
+  testmask[[4]] <- c(FALSE, FALSE, FALSE,  TRUE, FALSE, FALSE, FALSE)
+  testmask[[5]] <- c( TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE, FALSE)
+  testmask[[6]] <- c( TRUE,  TRUE,  TRUE,  TRUE,  TRUE, FALSE,  TRUE)
+  testmask[[7]] <- c( TRUE,  TRUE,  TRUE, FALSE, FALSE, FALSE, FALSE)
+  testmask[[8]] <- c( TRUE,  TRUE,  TRUE,  TRUE,  TRUE, FALSE, FALSE)
   testtomask <- c(1L, 2L, 3L, 3L, 3L)
   
   codemask <- vector("list", 4)
+  names(codemask) = c("gonly", "ge", "gxe", "g0gxe")
   for(i in 1L:4L) {
     codemask[[i]] <- rep(FALSE, 7)
+    names(codemask[[i]]) <- c("fit", "resids", "sigma2",
+                              "xtx", "xtxinv", "Wald", "WaldHW")
   }
   for (i in 1L:5L) {
-    for (j in 1L:5L) {
+    for (j in 1L:6L) {
       if (teststats[[i]][j] == TRUE) {
         codemask[[testtomask[i]]] <- codemask[[testtomask[i]]] | testmask[[j]]
       }
     }
   }
-  if (teststats[[3]][2] == TRUE)
-    codemask[[4]] <- codemask[[4]] | testmask[[6]]
-  if (teststats[[3]][3] == TRUE)
-    codemask[[4]] <- codemask[[4]] | testmask[[7]]
-  if (teststats[[4]][2] == TRUE)
-    codemask[[2]] <- codemask[[2]] | testmask[[6]]
-  if (teststats[[4]][3] == TRUE)
-    codemask[[2]] <- codemask[[2]] | testmask[[7]]
   
-
+  if (teststats$ggxe["lrt"] == TRUE)
+    codemask$g0gxe <- codemask$g0gxe | testmask[[7]]
+  if (teststats$ggxe["score"] == TRUE)
+    codemask$g0gxe <- codemask$g0gxe | testmask[[8]]
+  if (teststats$ggxe["scoreHW"] == TRUE)
+    codemask$g0gxe <- codemask$g0gxe | testmask[[8]]
+  
+  # 4 is the two df test
+  if (teststats$gxe["lrt"] == TRUE)
+    codemask$ge <- codemask$ge | testmask[[7]]
+  if (teststats$gxe["score"] == TRUE)
+    codemask$ge <- codemask$ge | testmask[[8]]
+  if (teststats$gxe["scoreHW"] == TRUE)
+    codemask$ge <- codemask$ge | testmask[[8]]
+  
+  
   return(codemask)
 }

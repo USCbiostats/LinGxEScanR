@@ -128,6 +128,28 @@ int lslinregxtxinv(const arma::mat &xtx,
 }
 
 // [[Rcpp::export]]
+int lslinreguut(const arma::mat &xl,
+                const arma::mat &xr,
+                const arma::vec &resids,
+                arma::vec &s2a,
+                arma::mat &uut) {
+  int r1, r2, r3;
+  
+  r1 = xl.n_cols - 1;
+  r2 = xl.n_cols;
+  r3 = r1 + xr.n_cols;
+
+  s2a = resids % resids;
+  
+  uut.submat(0, 0, r1, r1) = xl.t() * arma::diagmat(s2a) * xl;
+  uut.submat(0, r2, r1, r3) = xl.t() * arma::diagmat(s2a) * xr;
+  uut.submat(r2, 0, r3, r1) = uut.submat(0, r2, r1, r3).t();
+  uut.submat(r2, r2, r3, r3) = xr.t() * arma::diagmat(s2a) * xr;
+
+  return 0;
+}
+
+// [[Rcpp::export]]
 int lslinregwaldtest(const arma::mat &xl,
                      const arma::mat &xr,
                      const arma::mat &bb,

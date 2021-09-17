@@ -48,8 +48,8 @@ levenetest <- function(dosage, p0, p1, p2, res) {
     muz <- (muz0 + muz1) / n
     muz0 <- muz0 / (n0 + n1)
     muz1 <- muz1 / n2
-    denom <- (sum((p0 + p1)*(z0 - muz0)^2) + sum(p2*(z1 - muz1)^2))
-    numer <- ((n0 + n1)*sum((muz0 - muz)^2) + n2*sum((muz1 - muz)^2))
+    denom <- (sum((p0 + p1)*(z0 - muz0)^2) + sum(p2*(z1 - muz1)^2)) / (n - k)
+    numer <- ((n0 + n1)*sum((muz0 - muz)^2) + n2*sum((muz1 - muz)^2)) / (k - 1)
     return (list(f = ((n - k) *numer) / ((k - 1) * denom),
                  numer = numer,
                  denom = denom,
