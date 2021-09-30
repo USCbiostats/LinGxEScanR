@@ -36,22 +36,22 @@ assigncolumnnames <- function(outfile, binarye, teststats, levene) {
 #  names(statnameg) <- c("beta", "lrt", "score", "scoreHW", "Wald", "WaldHW")
   statnameg[[1]] <- "bg"
   statnameg[[2]] <- "lrt_chi_g"
-  statnameg[[3]] <- "score_z_g"
-  statnameg[[4]] <- "scorehw_z_g"
+  statnameg[[3]] <- c("score_z_g", "score_bg", "info_bg")
+  statnameg[[4]] <- c("scorehw_z_g", "scorehw_bg", "infohw_bg")
   statnameg[[5]] <- c("wald_se_g", "wald_t_g", "wald_df_g")
   statnameg[[6]] <- c("waldhw_se_g", "waldhw_z_g")
   statnamegxe <- vector("list", 6)
   statnamegxe[[1]] <- "bgxe"
   statnamegxe[[2]] <- "lrt_chi_gxe"
-  statnamegxe[[3]] <- "score_z_gxe"
-  statnamegxe[[4]] <- "scorehw_z_gxe"
+  statnamegxe[[3]] <- c("score_z_gxe", "score_bgxe", "info_bgxe")
+  statnamegxe[[4]] <- c("scorehw_z_gxe", "scorehw_bgxe", "infohw_bgxe")
   statnamegxe[[5]] <- c("wald_se_gxe", "wald_t_gxe", "wald_df_gxe")
   statnamegxe[[6]] <- c("waldhw_se_gxe", "waldhw_z_gxe")
   statname2df <- vector("list", 5)
   statname2df[[1]] <- NA
   statname2df[[2]] <- "lrt_chi2df"
-  statname2df[[3]] <- "score_chi2df"
-  statname2df[[4]] <- "scorehw_chi2df"
+  statname2df[[3]] <- c("score_chi2df", "score_bg_joint", "score_bgxe_joint", "info_bg_joint", "info_bgxe_joint", "info_bg_bgxe_joint")
+  statname2df[[4]] <- c("scorehw_chi2df", "scorehw_bg_joint", "scorehw_bgxe_joint", "infohw_bg_joint", "infohw_bgxe_joint", "infohw_bg_bgxe_joint")
   statname2df[[5]] <- c("wald_chi2df", "wald_var_g", "wald_var_gxe", "wald_cov_ggxe")
   statname2df[[6]] <- c("waldhw_chi2df", "waldhw_var_g", "waldhw_var_gxe", "waldhw_cov_ggxe")
   for (i in 1:3) {
@@ -114,10 +114,10 @@ gstats <- function(teststats, lslinregout, loglike0, resids0, xtxinv0, s2) {
   if (teststats[3] == TRUE) {
     cols <- rep(TRUE,p+q)
     cols[p+1] <- FALSE
-    i2.1 <- (lslinregout$xtx[p+1, p+1] - lslinregout$xtx[p+1, cols] %*% xtxinv0 %*% lslinregout$xtx[cols, p+1]) / s2
-    l2 <- sum(resids0*lslinregout$xr[,1]) / s2
+    i2.1 <- (lslinregout$xtx[p+1, p+1] - lslinregout$xtx[p+1, cols] %*% xtxinv0 %*% lslinregout$xtx[cols, p+1]) * s2
+    l2 <- sum(resids0*lslinregout$xr[,1])
     scoreg <- l2 / sqrt(i2.1)
-    outstats <- c(outstats, scoreg)
+    outstats <- c(outstats, scoreg, l2, i2.1)
   }
   
   if (teststats[4] == TRUE) {
@@ -131,8 +131,10 @@ gstats <- function(teststats, lslinregout, loglike0, resids0, xtxinv0, s2) {
     cmat <- matrix(0, 1, p+q)
     cmat[1,cols] <- -lslinregout$xtx[p+1, cols] %*% xtxinv0
     cmat[1,p+1] <- 1
-    scorehwg <- sum(resids0*lslinregout$xr[,1]) / sqrt(cmat %*% lslinregout$uut %*% t(cmat))
-    outstats <- c(outstats, scorehwg)
+    testscore <- sum(resids0*lslinregout$xr[,1])
+    testinfo <- cmat %*% lslinregout$uut %*% t(cmat)
+    scorehwg <- testscore / sqrt(testinfo)
+    outstats <- c(outstats, scorehwg, testscore, testinfo)
   }
   
   if (teststats[5] == TRUE) {
@@ -170,10 +172,10 @@ gxestats <- function(teststats, lslinregout, loglike0, resids0, xtxinv0, s2) {
   
   if (teststats[3] == TRUE) {
     cols <- 1:(p+q-1)
-    i2.1 <- (lslinregout$xtx[p+2, p+2] - lslinregout$xtx[p+2, cols] %*% xtxinv0 %*% lslinregout$xtx[cols, p+2]) / s2
-    l2 <- sum((resids0*lslinregout$xr[,2])) / s2
+    i2.1 <- (lslinregout$xtx[p+2, p+2] - lslinregout$xtx[p+2, cols] %*% xtxinv0 %*% lslinregout$xtx[cols, p+2]) * s2
+    l2 <- sum((resids0*lslinregout$xr[,2]))
     scoreg <- l2 / sqrt(i2.1)
-    outstats <- c(outstats, scoreg)
+    outstats <- c(outstats, scoreg, l2, i2.1)
   }
   
   if (teststats[4] == TRUE) {
@@ -185,8 +187,10 @@ gxestats <- function(teststats, lslinregout, loglike0, resids0, xtxinv0, s2) {
     cmat <- matrix(0, 1, p+q)
     cmat[1,1:(p+1)] <- -lslinregout$xtx[p+2, 1:(p+1)] %*% xtxinv0
     cmat[1,(p+q)] <- 1
-    scorehwgxe <- sum(resids0*lslinregout$xr[,2]) / sqrt(cmat %*% lslinregout$uut %*% t(cmat))
-    outstats <- c(outstats, scorehwgxe)
+    testscore <- sum(resids0*lslinregout$xr[,2])
+    testinfo <- cmat %*% lslinregout$uut %*% t(cmat)
+    scorehwgxe <- testscore / sqrt(testinfo)
+    outstats <- c(outstats, scorehwgxe, testscore, testinfo)
   }
   
   if (teststats[5] == TRUE) {
@@ -220,10 +224,10 @@ twodfstats <- function(teststats, lslinregout, loglike0, resids0, xtxinv0, s2) {
     outstats <- c(outstats, 2*(lslinregout$loglike[2] - loglike0))
 
   if (teststats[3] == TRUE) {
-    i2.1 <- (lslinregout$xtx[cols,cols] - lslinregout$xtx[cols, 1:p] %*% xtxinv0 %*% lslinregout$xtx[1:p, cols]) / s2
-    l2 <- c(sum(resids0*lslinregout$xr[,1]), sum(resids0*lslinregout$xr[,2])) / s2
+    i2.1 <- (lslinregout$xtx[cols,cols] - lslinregout$xtx[cols, 1:p] %*% xtxinv0 %*% lslinregout$xtx[1:p, cols]) * s2
+    l2 <- c(sum(resids0*lslinregout$xr[,1]), sum(resids0*lslinregout$xr[,2]))
     score2df <- t(l2) %*% solve(i2.1) %*% l2
-    outstats <- c(outstats, score2df)
+    outstats <- c(outstats, score2df, l2[1], l2[2], i2.1[1,1], i2.1[2,2], i2.1[2,1])
   }
   
   if (teststats[4] == TRUE) {
@@ -238,8 +242,9 @@ twodfstats <- function(teststats, lslinregout, loglike0, resids0, xtxinv0, s2) {
     uhwg <- matrix(0,2,1)
     uhwg[1,1] <- sum(resids0*lslinregout$xr[,1])
     uhwg[2,1] <- sum(resids0*lslinregout$xr[,2])
-    score2df <- t(uhwg) %*% solve(cmat %*% lslinregout$uut %*% t(cmat)) %*% uhwg
-    outstats <- c(outstats, score2df)
+    testinfo <- cmat %*% lslinregout$uut %*% t(cmat)
+    score2df <- t(uhwg) %*% solve(testinfo) %*% uhwg
+    outstats <- c(outstats, score2df, uhwg[1,1], uhwg[2,1], testinfo[1,1], testinfo[2,2], testinfo[2,1])
   }
   
   if (teststats[5] == TRUE) {
