@@ -177,7 +177,8 @@ runalllslinreg <- function(dosage, p0, p1, p2,
                            subindex, binarye, eindex0, eindex1,
                            minmac, maxmac,
                            lslinregg, lslinregge, lslinreggxe, lslinregg0gxe,
-                           teststats, codemask, levene, snpinfo, snplist, snpnum, outfile) {
+                           teststats, pout, statout, meta,
+                           codemask, levene, snpinfo, snplist, snpnum, outfile) {
   subdose <- dosage[subindex]
   mac <- sum(subdose)
   if (mac < minmac || mac > maxmac) {
@@ -226,31 +227,36 @@ runalllslinreg <- function(dosage, p0, p1, p2,
                     lslinregg$loglike[1],
                     lslinregg$resids0,
                     lslinregg$xtxinv0,
-                    lslinregg$s2[1])
+                    lslinregg$s2[1],
+                    pout, statout, meta)
   gestats <- gstats(teststats$ge,
                     lslinregge,
                     lslinregge$loglike[1],
                     lslinregge$resids0,
                     lslinregge$xtxinv0,
-                    lslinregge$s2[1])
+                    lslinregge$s2[1],
+                    pout, statout, meta)
   ggxestatsout <- gstats(teststats$ggxe,
                       lslinreggxe,
                       lslinregg0gxe$loglike[2],
                       lslinregg0gxe$resids,
                       lslinregg0gxe$xtxinv,
-                      lslinregg0gxe$s2[2])
+                      lslinregg0gxe$s2[2],
+                      pout, statout, meta)
   gxestatsout <- gxestats(teststats$gxe,
                           lslinreggxe,
                           lslinregge$loglike[2],
                           lslinregge$resids,
                           lslinregge$xtxinv,
-                          lslinregge$s2[2])
-  twodfstats <- twodfstats(teststats$twodf,
+                          lslinregge$s2[2],
+                          pout, statout, meta)
+  twodfstats <- twodfstats(teststats$joint,
                            lslinreggxe,
                            lslinreggxe$loglike[1],
                            lslinreggxe$resids0,
                            lslinreggxe$xtxinv0,
-                           lslinreggxe$s2[1])
+                           lslinreggxe$s2[1],
+                           pout, statout, meta)
   levenestats <- numeric(0)
   if (levene[1] == TRUE) {
     w <- levenetest(dosage = subdose,
@@ -393,7 +399,7 @@ subsetdata <- function(subdata, ginfo, mincov) {
 #####################################################
 ###          Check for valid input values
 #####################################################
-validateinput <- function(data, ginfo, outfile, skipfile,
+validateinput <- function(data, ginfo, outfile, outformat, skipfile,
                           minmaf, blksize) {
   # Check if input values are of correct type
   if (is.data.frame(data) == FALSE)
@@ -407,8 +413,16 @@ validateinput <- function(data, ginfo, outfile, skipfile,
     stop("outfile must be a character value")
   if (length(outfile) != 1)
     stop("outfile must be a character vector of length 1")
+  if (is.character(outformat) == FALSE)
+    stop("outformat must be a chracter value")
+  if (length(outformat) != 1)
+    stop("outformat must be a character vector of length 1")
   if (is.character(skipfile) == FALSE)
     stop("skipfile must be a character value")
+  if (outfile != "") {
+    if (outformat != "text" & outformat != "RDS")
+      stop("outformat must be either \"text\" or \"RDS\"")
+  }
   if (length(skipfile) != 1)
     stop("skipfile must be a character vector of length 1")
   if (is.numeric(minmaf) == FALSE)
@@ -451,7 +465,8 @@ validateinput <- function(data, ginfo, outfile, skipfile,
 #' with the gene and all the covariates except the one used in the
 #' gene-environement interaction. The value must be a character array
 #' containing any or all of the following values, "fit", "lrt", "score",
-#' "Wald", and "WaldHW". This value can also be "all" or "none".
+#' "robustscore", "Wald", and "robustWald". This value can also be "all"
+#' or "none".
 #' @param ge The tests to perform on the beta_g parameter from the model
 #' with the all the covariates and the gene. The value has the sames
 #' requirements as the gonly value.
@@ -461,10 +476,15 @@ validateinput <- function(data, ginfo, outfile, skipfile,
 #' @param gxe The test to perform on the beta_gxe parameter from the model
 #' that contains all the covariates, the gene, and the gene-environment
 #' interaction. The values has the same requirements as the gonly value.
-#' @param twodf The test two degree of tests to perform on the beta_g and
+#' @param joint The two degree of tests to perform on the beta_g and
 #' beta_gxe parameters from the model that contains all the covariates,
 #' the gene, and the gene-environment interaction. The values has the same
 #' requirements as the gonly value.
+#' @param testvalue The value to output for the test. Can be "stat", "p",
+#' or "both". "stat" indicates to output the test statistic. "p" indicates
+#' to output the p-value. "both" indicates to output the test statistic
+#' and the p-value.
+#' @param meta Indicator to output the values needed for a meta-analysis.
 #' @param levene Logical array indicating which Levene tests to run. The
 #' first value indicates to run the Levene test with the interaction
 #' covariate and the second value indicates to run the Levene test without
@@ -473,6 +493,7 @@ validateinput <- function(data, ginfo, outfile, skipfile,
 #' @param outfile The file name for the results Can be blank.
 #' If the value is "", the results are returned as a data frame. Default
 #' value is ""
+#' @param outformat Format of the output file. Can either be "text" or "RDS".
 #' @param skipfile The name of the file to write the SNPs that were not
 #' used and the reason they weren't used. If the value is blank, there is
 #' no output of the unused SNPs. Default value is "".
@@ -495,8 +516,8 @@ validateinput <- function(data, ginfo, outfile, skipfile,
 #'
 #' results <- gweis(data = covdata, ginfo = bdinfo)
 lingweis <- function(data, ginfo, snps,
-                     gonly, ge, ggxe, gxe, twodf, levene,
-                     outfile, skipfile,
+                     gonly, ge, ggxe, gxe, joint, testvalue, meta, levene,
+                     outfile, outformat, skipfile,
                      minmaf, blksize) {
   ## Set values to default for missing input values
   if (missing(data) == TRUE)
@@ -508,17 +529,23 @@ lingweis <- function(data, ginfo, snps,
   if (missing(gonly) == TRUE)
     gonly <- "Wald"
   if (missing(ge) == TRUE)
-    ge <- "WaldHW"
+    ge <- "none"
   if (missing(ggxe) == TRUE)
-    ggxe <- "WaldHW"
+    ggxe <- c("Wald", "robustWald")
   if (missing(gxe) == TRUE)
-    gxe <- "WaldHW"
-  if (missing(twodf) == TRUE)
-    twodf <- "WaldHW"
+    gxe <- c("Wald", "robustWald")
+  if (missing(joint) == TRUE)
+    joint <- c("Wald", "robustWald")
+  if (missing(testvalue) == TRUE)
+    testvalue <- "p"
+  if (missing(meta) == TRUE)
+    meta <- TRUE
   if (missing(levene) == TRUE)
-    levene <- c(TRUE, FALSE)
+    levene <- c(FALSE, FALSE)
   if (missing(outfile) == TRUE)
     outfile <- ""
+  if (missing(outformat) == TRUE)
+    outformat == "text"
   if (missing(skipfile) == TRUE)
     skipfile <- ""
   if (missing(minmaf) == TRUE)
@@ -527,7 +554,7 @@ lingweis <- function(data, ginfo, snps,
     blksize <- 0L
 
   ## Make sure input values are valid  
-  validateinput(data, ginfo, outfile, skipfile, minmaf, blksize)
+  validateinput(data, ginfo, outfile, outformat, skipfile, minmaf, blksize)
   
   ## Subset the SNPs for analysis
   snps <- subsetsnps(snps = snps,
@@ -553,12 +580,12 @@ lingweis <- function(data, ginfo, snps,
 
   ## Determine test statistics to calculate
   teststats <- vector("list", 5)
-  names(teststats) <- c("gonly", "ge", "ggxe", "gxe", "twodf")
+  names(teststats) <- c("gonly", "ge", "ggxe", "gxe", "joint")
   teststats[[1]] <- assignstats(gonly, "gonly")
   teststats[[2]] <- assignstats(ge, "ge")
   teststats[[3]] <- assignstats(ggxe, "ggxe")
   teststats[[4]] <- assignstats(gxe, "gxe")
-  teststats[[5]] <- assignstats(twodf, "2df")
+  teststats[[5]] <- assignstats(joint, "joint")
   teststats[[5]][1] <- FALSE
   if (is.logical(levene) == FALSE)
     stop("levene must be a logical value")
@@ -600,7 +627,32 @@ lingweis <- function(data, ginfo, snps,
   initializelslinreg(lslinreggxe)
   initializelslinreg(lslinregg0gxe)
 
-  columnnames <- assigncolumnnames(outfile, subsetinfo$binarye, teststats, levene)
+  if (outfile != '') {
+    if (outformat == "RDS") {
+      rdsoutfile <- outfile
+      outfile <- tempfile()
+    } else {
+      rdsoutfile <- ""
+    }
+  }
+  pout <- FALSE
+  statout <- FALSE
+  if (is.character(testvalue) == FALSE)
+    stop("testvalue must be a character value")
+  if (length(testvalue) != 1)
+    stop("testvalue must be a character vector of length 1")
+  if (testvalue == "p") {
+    pout <- TRUE
+  } else if (testvalue == "stat") {
+    statout <- TRUE
+  } else if (testvalue == "both") {
+    pout <- TRUE
+    statout <- TRUE
+  } else {
+    stop("Unknown value for testvalue")
+  }
+  columnnames <- assigncolumnnames(outfile, subsetinfo$binarye, teststats,
+                                   pout, statout, meta, levene)
   codemask <- assigntests(teststats)
 
   snpnumber <- integer(1)
@@ -620,6 +672,9 @@ lingweis <- function(data, ginfo, snps,
                         lslinreggxe = lslinreggxe,
                         lslinregg0gxe = lslinregg0gxe,
                         teststats = teststats,
+                        pout = pout,
+                        statout = statout,
+                        meta = meta,
                         codemask = codemask,
                         levene = levene,
                         snpinfo = ginfo$snps,
@@ -641,6 +696,9 @@ lingweis <- function(data, ginfo, snps,
                        lslinreggxe = lslinreggxe,
                        lslinregg0gxe = lslinregg0gxe,
                        teststats = teststats,
+                       pout = pout,
+                       statout = statout,
+                       meta = meta,
                        codemask = codemask,
                        levene = levene,
                        snpinfo = ginfo$snps,
@@ -664,5 +722,9 @@ lingweis <- function(data, ginfo, snps,
     return(m)
   }
 
+  if (outformat == "RDS") {
+    df <- read.table(file = outfile, header = TRUE, sep = "\t")
+    saveRDS(df, rdsoutfile)
+  }
   return (result)
 }
