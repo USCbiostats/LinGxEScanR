@@ -518,7 +518,39 @@ validateinput <- function(data, ginfo, outfile, outformat, skipfile,
 lingweis <- function(data, ginfo, snps,
                      gonly, ge, ggxe, gxe, joint, testvalue, meta, levene,
                      outfile, outformat, skipfile,
-                     minmaf, blksize) {
+                     minmaf, blksize, CHARGE) {
+  ####################  CHARGE ################################################
+  if (missing(CHARGE) == TRUE)
+    CHARGE <- TRUE
+  if (is.logical(CHARGE) == FALSE)
+    stop("CHARGE must be a logical value")
+  if (length(CHARGE) != 1)
+    stop("CHARGE must be a logical vector of length 1")
+  ## Over-writing requested tests to do only what is needed for CHARGE
+  if (CHARGE == TRUE) {
+    gonly <- "Wald"
+    ggxe <- c("Wald", "robustWald")
+    gxe <- c("Wald", "robustWald")
+    joint <- c("Wald", "robustWald")
+    if (missing(outfile) == TRUE)
+      outfile == ""
+    if (is.character(outfile) == FALSE)
+      stop("output file must be a character value")
+    if (length(outfile) != 1)
+      stop("output file must be a character vector of length 1")
+    if (outfile == "")
+      stop("No output file specified for CHARGE")
+    chargeout <- outfile
+    outfile <- tempfile()
+    outformat <- "text"
+    testvalue <- "p"
+    meta <- TRUE
+    levene <- c(FALSE, FALSE)
+  } else {
+    chargeout <- ""
+  }  
+  #############################################################################
+  
   ## Set values to default for missing input values
   if (missing(data) == TRUE)
     stop("No subject data")
@@ -545,7 +577,7 @@ lingweis <- function(data, ginfo, snps,
   if (missing(outfile) == TRUE)
     outfile <- ""
   if (missing(outformat) == TRUE)
-    outformat == "text"
+    outformat <- "text"
   if (missing(skipfile) == TRUE)
     skipfile <- ""
   if (missing(minmaf) == TRUE)
@@ -725,6 +757,22 @@ lingweis <- function(data, ginfo, snps,
   if (outformat == "RDS") {
     df <- read.table(file = outfile, header = TRUE, sep = "\t")
     saveRDS(df, rdsoutfile)
+  }
+  if (CHARGE == TRUE) {
+    res <- read.table(outfile, header = TRUE, sep = '\t', stringsAsFactors = FALSE)
+    lingxecolnames <- c("SNP", "CHR", "LOC", "ALT", "REF", "aaf", "aaf_e0", "aaf_e1", "n", "n_e1",
+                        "bg_go", "wald_se_bg_go", "wald_p_bg_go",
+                        "bg_gxe", "wald_se_bg_gxe", "wald_p_bg_gxe", "robustwald_se_bg_gxe", "robustwald_p_bg_gxe",
+                        "bgxe", "wald_se_bgxe", "wald_p_bgxe", "robustwald_se_bgxe", "robustwald_p_bgxe",
+                        "wald_p_joint", "wald_cov_bg_bgxe_joint", "robustwald_p_joint", "robustwald_cov_bg_bgxe_joint")
+    colstokeep <- match(lingxecolnames, colnames(res))
+    df <- res[,colstokeep]
+    colnames(df) <- c("SNPID", "CHR", "POS", "EFFECT_ALLELE", "NON_EFFECT_ALLELE", "EAF_ALL", "EAF_E0", "EAF_E1", "N", "N_EXP",
+                      "BETA_SNP_M2", "SE_SNP_M2", "P_SNP_M2",
+                      "BETA_SNP_M1", "SE_SNP_M1_MB", "P_SNP_M1_MB", "SE_SNP_M1_ROBUST", "P_SNP_M1_ROBUST",
+                      "BETA_INT_MB", "SE_INT_MB", "P_INT_MB", "SE_INT_ROBUST", "P_INT_ROBUST",
+                      "P_JOINT_MB", "COV_SNP_INT_MB", "P_JOINT_ROBUST", "COV_SNP_INT_ROBUST")
+    write.table(df, chargeout, sep = "\t", row.names = FALSE)
   }
   return (result)
 }
