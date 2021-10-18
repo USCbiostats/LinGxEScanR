@@ -85,7 +85,6 @@ assigncolumnnames <- function(outfile, binarye, teststats, pout, statout, meta, 
     statnamegxe[[3]] <- c("score_bgxe", "info_bgxe")
   else
     statnamegxe[[3]] <- character(0)
-  statnamegxe[[3]] <- c("score_bgxe", "info_bgxe")
   if (statout == TRUE)
     statnamegxe[[3]] <- c("score_z_bgxe", statnamegxe[[3]])
   if (pout == TRUE)
@@ -122,7 +121,7 @@ assigncolumnnames <- function(outfile, binarye, teststats, pout, statout, meta, 
     statname2df[[2]] <- c(statname2df[[2]], "lrt_p_joint")
 
   if (meta == TRUE)
-    statname2df[[3]] <- c("score_bgxe_joint", "info_bg_joint", "info_bgxe_joint", "info_bg_bgxe_joint")
+    statname2df[[3]] <- c("score_bg_joint", "score_bgxe_joint", "info_bg_joint", "info_bgxe_joint", "info_bg_bgxe_joint")
   else
     statname2df[[3]] <- character(0)
   if (statout == TRUE)
@@ -212,8 +211,12 @@ gstats <- function(teststats, lslinregout, loglike0, resids0, xtxinv0, s2,
     outstats <- bg
   }
 
-  if (teststats[2] == TRUE)
-    outstats <- c(outstats, 2*(lslinregout$loglike[2] - loglike0))
+  if (teststats[2] == TRUE) {
+    if (statout == TRUE)
+      outstats <- c(outstats, 2*(lslinregout$loglike[2] - loglike0))
+    if (pout == TRUE)
+      outstats <- c(outstats, pchisq(2*(lslinregout$loglike[2] - loglike0), 1, lower.tail = FALSE))
+  }
   
   if (teststats[3] == TRUE) {
     cols <- rep(TRUE,p+q)
@@ -290,9 +293,13 @@ gxestats <- function(teststats, lslinregout, loglike0, resids0, xtxinv0, s2,
     outstats <- bgxe
   }
     
-  if (teststats[2] == TRUE)
-    outstats <- c(outstats, 2*(lslinregout$loglike[2] - loglike0))
-  
+  if (teststats[2] == TRUE) {
+    if (statout == TRUE)
+      outstats <- c(outstats, 2*(lslinregout$loglike[2] - loglike0))
+    if (pout == TRUE)
+      outstats <- c(outstats, pchisq(2*(lslinregout$loglike[2] - loglike0), 1, lower.tail = FALSE))
+  }
+
   if (teststats[3] == TRUE) {
     cols <- 1:(p+q-1)
     i2.1 <- (lslinregout$xtx[p+2, p+2] - lslinregout$xtx[p+2, cols] %*% xtxinv0 %*% lslinregout$xtx[cols, p+2]) * s2
@@ -319,9 +326,9 @@ gxestats <- function(teststats, lslinregout, loglike0, resids0, xtxinv0, s2,
     testinfo <- cmat %*% lslinregout$uut %*% t(cmat)
     scorehwgxe <- testscore / sqrt(testinfo)
     if (statout == TRUE)
-      outstats <- c(outstats, scorehwg)
+      outstats <- c(outstats, scorehwgxe)
     if (pout == TRUE)
-      outstats <- c(outstats, 2*pnorm(abs(scorehwg), lower.tail = FALSE))
+      outstats <- c(outstats, 2*pnorm(abs(scorehwgxe), lower.tail = FALSE))
     if (meta == TRUE)
       outstats <- c(outstats, testscore, testinfo)
   }
@@ -362,8 +369,12 @@ twodfstats <- function(teststats, lslinregout, loglike0, resids0, xtxinv0, s2,
   q <- ncol(lslinregout$xr)
   cols <- (p+1):(p+q)
   
-  if (teststats[2] == TRUE)
-    outstats <- c(outstats, 2*(lslinregout$loglike[2] - loglike0))
+  if (teststats[2] == TRUE) {
+    if (statout == TRUE)
+      outstats <- c(outstats, 2*(lslinregout$loglike[2] - loglike0))
+    if (pout == TRUE)
+      outstats <- c(outstats, pchisq(2*(lslinregout$loglike[2] - loglike0), 2, lower.tail = FALSE))
+  }
 
   if (teststats[3] == TRUE) {
     i2.1 <- (lslinregout$xtx[cols,cols] - lslinregout$xtx[cols, 1:p] %*% xtxinv0 %*% lslinregout$xtx[1:p, cols]) * s2
