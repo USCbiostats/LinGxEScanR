@@ -66,7 +66,7 @@ assigncolumnnames <- function(outfile, binarye, teststats, pout, statout, meta, 
   if (pout == TRUE)
     statnameg[[5]] <- c(statnameg[[5]], "wald_p_bg")
   
-  statnameg[[6]] <- c("rosubtwald_se_bg")
+  statnameg[[6]] <- c("robustwald_se_bg")
   if (statout == TRUE)
     statnameg[[6]] <- c(statnameg[[6]], "robustwald_z_bg")
   if (pout == TRUE)
@@ -105,7 +105,7 @@ assigncolumnnames <- function(outfile, binarye, teststats, pout, statout, meta, 
   if (pout == TRUE)
     statnamegxe[[5]] <- c(statnamegxe[[5]], "wald_p_bgxe")
   
-  statnamegxe[[6]] <- c("rosubtwald_se_bgxe")
+  statnamegxe[[6]] <- c("robustwald_se_bgxe")
   if (statout == TRUE)
     statnamegxe[[6]] <- c(statnamegxe[[6]], "robustwald_z_bgxe")
   if (pout == TRUE)
