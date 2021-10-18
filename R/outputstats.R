@@ -46,19 +46,19 @@ assigncolumnnames <- function(outfile, binarye, teststats, pout, statout, meta, 
     statnameg[[3]] <- c("score_bg", "info_bg")
   else
     statnameg[[3]] <- character(0)
-  if (statout == TRUE)
-    statnameg[[3]] <- c("score_z_bg", statnameg[[3]])
   if (pout == TRUE)
     statnameg[[3]] <- c("score_p_bg", statnameg[[3]])
+  if (statout == TRUE)
+    statnameg[[3]] <- c("score_z_bg", statnameg[[3]])
   
   if (meta == TRUE)
     statnameg[[4]] <- c("robustscore_bg", "robustinfo_bg")
   else
     statnameg[[4]] <- character(0)
-  if (statout == TRUE)
-    statnameg[[4]] <- c("robustscore_z_bg", statnameg[[4]])
   if (pout == TRUE)
     statnameg[[4]] <- c("robustscore_p_bg", statnameg[[4]])
+  if (statout == TRUE)
+    statnameg[[4]] <- c("robustscore_z_bg", statnameg[[4]])
   
   statnameg[[5]] <- c("wald_se_bg")
   if (statout == TRUE)
@@ -85,19 +85,19 @@ assigncolumnnames <- function(outfile, binarye, teststats, pout, statout, meta, 
     statnamegxe[[3]] <- c("score_bgxe", "info_bgxe")
   else
     statnamegxe[[3]] <- character(0)
-  if (statout == TRUE)
-    statnamegxe[[3]] <- c("score_z_bgxe", statnamegxe[[3]])
   if (pout == TRUE)
     statnamegxe[[3]] <- c("score_p_bgxe", statnamegxe[[3]])
+  if (statout == TRUE)
+    statnamegxe[[3]] <- c("score_z_bgxe", statnamegxe[[3]])
   
   if (meta == TRUE)
     statnamegxe[[4]] <- c("robustscore_bgxe", "robustinfo_bgxe")
   else
     statnamegxe[[4]] <- character(0)
-  if (statout == TRUE)
-    statnamegxe[[4]] <- c("robustscore_z_bgxe", statnamegxe[[4]])
   if (pout == TRUE)
     statnamegxe[[4]] <- c("robustscore_p_bgxe", statnamegxe[[4]])
+  if (statout == TRUE)
+    statnamegxe[[4]] <- c("robustscore_z_bgxe", statnamegxe[[4]])
   
   statnamegxe[[5]] <- c("wald_se_bgxe")
   if (statout == TRUE)
@@ -124,19 +124,19 @@ assigncolumnnames <- function(outfile, binarye, teststats, pout, statout, meta, 
     statname2df[[3]] <- c("score_bg_joint", "score_bgxe_joint", "info_bg_joint", "info_bgxe_joint", "info_bg_bgxe_joint")
   else
     statname2df[[3]] <- character(0)
-  if (statout == TRUE)
-    statname2df[[3]] <- c("score_chi2df_joint", statname2df[[3]])
   if (pout == TRUE)
     statname2df[[3]] <- c("score_p_joint", statname2df[[3]])
+  if (statout == TRUE)
+    statname2df[[3]] <- c("score_chi2df_joint", statname2df[[3]])
 
   if (meta == TRUE)  
     statname2df[[4]] <- c("robustscore_bg_joint", "robustscore_bgxe_joint", "robustinfo_bg_joint", "robustinfo_bgxe_joint", "robustinfo_bg_bgxe_joint")
   else
     statname2df[[4]] <- character(0)
-  if (statout == TRUE)
-    statname2df[[4]] <- c("robustscore_chi2df_joint", statname2df[[4]])
   if (pout == TRUE)
     statname2df[[4]] <- c("robustscore_p_joint", statname2df[[4]])
+  if (statout == TRUE)
+    statname2df[[4]] <- c("robustscore_chi2df_joint", statname2df[[4]])
 
   if (meta == TRUE)
     statname2df[[5]] <- c("wald_var_bg_joint", "wald_var_bgxe_joint", "wald_cov_bg_bgxe_joint")
