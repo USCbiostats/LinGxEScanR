@@ -319,9 +319,9 @@ gxestats <- function(teststats, lslinregout, loglike0, resids0, xtxinv0, s2,
     testinfo <- cmat %*% lslinregout$uut %*% t(cmat)
     scorehwgxe <- testscore / sqrt(testinfo)
     if (statout == TRUE)
-      outstats <- c(outstats, scorehwg)
+      outstats <- c(outstats, scorehwgxe)
     if (pout == TRUE)
-      outstats <- c(outstats, 2*pnorm(abs(scorehwg), lower.tail = FALSE))
+      outstats <- c(outstats, 2*pnorm(abs(scorehwgxe), lower.tail = FALSE))
     if (meta == TRUE)
       outstats <- c(outstats, testscore, testinfo)
   }

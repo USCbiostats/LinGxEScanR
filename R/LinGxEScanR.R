@@ -399,7 +399,7 @@ subsetdata <- function(subdata, ginfo, mincov) {
 #####################################################
 ###          Check for valid input values
 #####################################################
-validateinput <- function(data, ginfo, outfile, outformat, skipfile,
+validateinput <- function(data, ginfo, outfile, outformat,
                           minmaf, blksize) {
   # Check if input values are of correct type
   if (is.data.frame(data) == FALSE)
@@ -417,14 +417,10 @@ validateinput <- function(data, ginfo, outfile, outformat, skipfile,
     stop("outformat must be a chracter value")
   if (length(outformat) != 1)
     stop("outformat must be a character vector of length 1")
-  if (is.character(skipfile) == FALSE)
-    stop("skipfile must be a character value")
   if (outfile != "") {
     if (outformat != "text" & outformat != "RDS")
       stop("outformat must be either \"text\" or \"RDS\"")
   }
-  if (length(skipfile) != 1)
-    stop("skipfile must be a character vector of length 1")
   if (is.numeric(minmaf) == FALSE)
     stop("minmaf must be a numeric value")
   if (length(minmaf) != 1)
@@ -494,9 +490,6 @@ validateinput <- function(data, ginfo, outfile, outformat, skipfile,
 #' If the value is "", the results are returned as a data frame. Default
 #' value is ""
 #' @param outformat Format of the output file. Can either be "text" or "RDS".
-#' @param skipfile The name of the file to write the SNPs that were not
-#' used and the reason they weren't used. If the value is blank, there is
-#' no output of the unused SNPs. Default value is "".
 #' @param minmaf Minimum minor allele frequency of SNPs to include
 #' in analysis. SNPS that have less than 20 minor alleles observed
 #' will be excluded from the analysis regardless of the value of
@@ -516,9 +509,8 @@ validateinput <- function(data, ginfo, outfile, outformat, skipfile,
 #'
 #' results <- gweis(data = covdata, ginfo = bdinfo)
 lingweis <- function(data, ginfo, snps,
-                     gonly, ge, ggxe, gxe, joint, testvalue, meta, levene,
-                     outfile, outformat, skipfile,
-                     minmaf, blksize, CHARGE) {
+                     gonly, ge, ggxe, gxe, joint, levene, testvalue, meta,
+                     outfile, outformat, minmaf, blksize, CHARGE) {
   ####################  CHARGE ################################################
   if (missing(CHARGE) == TRUE)
     CHARGE <- TRUE
@@ -578,15 +570,13 @@ lingweis <- function(data, ginfo, snps,
     outfile <- ""
   if (missing(outformat) == TRUE)
     outformat <- "text"
-  if (missing(skipfile) == TRUE)
-    skipfile <- ""
   if (missing(minmaf) == TRUE)
     minmaf <- 0.
   if (missing(blksize))
     blksize <- 0L
 
   ## Make sure input values are valid  
-  validateinput(data, ginfo, outfile, outformat, skipfile, minmaf, blksize)
+  validateinput(data, ginfo, outfile, outformat, minmaf, blksize)
   
   ## Subset the SNPs for analysis
   snps <- subsetsnps(snps = snps,
