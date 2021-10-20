@@ -3,6 +3,7 @@
 export(bdapply2)
 export(lingweis)
 export(vcfapply2)
+export(vcftobd2)
 importFrom(Rcpp,sourceCpp)
 importFrom(prodlim,row.match)
 importFrom(stats,complete.cases)

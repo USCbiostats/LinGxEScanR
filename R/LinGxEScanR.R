@@ -187,12 +187,12 @@ runalllslinreg <- function(dosage, p0, p1, p2,
   }
   if (binarye == TRUE) {
     mac <- sum(dosage[eindex0])
-    if (mac < 2 || mac > 2*length(subdose) - 2) {
+    if (mac < 5 || mac > 2*length(subdose) - 5) {
       increment(snpnum)
       return (NA)
     }
     mac <- sum(dosage[eindex1])
-    if (mac < 2 || mac > 2*length(subdose) - 2) {
+    if (mac < 5 || mac > 2*length(subdose) - 5) {
       increment(snpnum)
       return (NA)
     }
@@ -755,9 +755,23 @@ lingweis <- function(data, ginfo, snps,
                         "bg_gxe", "wald_se_bg_gxe", "wald_p_bg_gxe", "robustwald_se_bg_gxe", "robustwald_p_bg_gxe",
                         "bgxe", "wald_se_bgxe", "wald_p_bgxe", "robustwald_se_bgxe", "robustwald_p_bgxe",
                         "wald_p_joint", "wald_cov_bg_bgxe_joint", "robustwald_p_joint", "robustwald_cov_bg_bgxe_joint")
+    if (length(ginfo$additionalinfo$vcfinfo) != 0) {
+      rowstokeep <- match(res$SNP, ginfo$snps$snpid)
+      imputed <- ginfo$additionalinfo$vcfinfo$imputed[rowstokeep]
+      rsq <- ginfo$additionalinfo$vcfinfo$rsq[rowstokeep]
+    } else {
+      imputed <- as.integer(rep(NA, nrow(res)))
+      rsq <- as.numeric(rep(NA, nrow(res)))
+    }
     colstokeep <- match(lingxecolnames, colnames(res))
-    df <- res[,colstokeep]
-    colnames(df) <- c("SNPID", "CHR", "POS", "EFFECT_ALLELE", "NON_EFFECT_ALLELE", "EAF_ALL", "EAF_E0", "EAF_E1", "N", "N_EXP",
+    df <- data.frame(res[,colstokeep[1:3]],
+                     INFO = rsq,
+                     IMPUTED = imputed,
+                     res[,colstokeep[4:27]])
+    colnames(df) <- c("SNPID", "CHR", "POS",
+                      "INFO", "IMPUTED",
+                      "EFFECT_ALLELE", "NON_EFFECT_ALLELE",
+                      "EAF_ALL", "EAF_E0", "EAF_E1", "N", "N_EXP",
                       "BETA_SNP_M2", "SE_SNP_M2", "P_SNP_M2",
                       "BETA_SNP_M1", "SE_SNP_M1_MB", "P_SNP_M1_MB", "SE_SNP_M1_ROBUST", "P_SNP_M1_ROBUST",
                       "BETA_INT_MB", "SE_INT_MB", "P_INT_MB", "SE_INT_ROBUST", "P_INT_ROBUST",
