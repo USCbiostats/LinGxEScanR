@@ -774,7 +774,7 @@ lingweis <- function(data, ginfo, snps,
                       "EAF_ALL", "EAF_E0", "EAF_E1", "N", "N_EXP",
                       "BETA_SNP_M2", "SE_SNP_M2", "P_SNP_M2",
                       "BETA_SNP_M1", "SE_SNP_M1_MB", "P_SNP_M1_MB", "SE_SNP_M1_ROBUST", "P_SNP_M1_ROBUST",
-                      "BETA_INT_MB", "SE_INT_MB", "P_INT_MB", "SE_INT_ROBUST", "P_INT_ROBUST",
+                      "BETA_INT", "SE_INT_MB", "P_INT_MB", "SE_INT_ROBUST", "P_INT_ROBUST",
                       "P_JOINT_MB", "COV_SNP_INT_MB", "P_JOINT_ROBUST", "COV_SNP_INT_ROBUST")
     write.table(df, chargeout, sep = "\t", row.names = FALSE)
   }
