@@ -335,7 +335,7 @@ subsetsnps <- function(snps, snplist) {
 
 # Subsets the covariate data to complete cases
 # Also gets subject indices in the genetic data
-subsetdata <- function(subdata, ginfo, mincov) {
+subsetdata <- function(subdata, ginfo, evalue, mincov) {
   # There must be at least two columns in the subject data
   if(ncol(subdata) < 2)
     stop("There must me at least two columns in the subject data")
@@ -508,7 +508,7 @@ validateinput <- function(data, ginfo, outfile, outformat,
 #' covdata <- readRDS(system.file("extdata/covdata.rds", package = "GxEScanR"))
 #'
 #' results <- gweis(data = covdata, ginfo = bdinfo)
-lingweis <- function(data, ginfo, snps,
+lingweis <- function(data, ginfo, snps, evalue, govalues,
                      gonly, ge, ggxe, gxe, joint, levene, testvalue, meta,
                      outfile, outformat, minmaf, blksize, CHARGE) {
   ####################  CHARGE ################################################
@@ -550,6 +550,51 @@ lingweis <- function(data, ginfo, snps,
     stop("No genetic data, ginfo")
   if (missing(snps) == TRUE)
     snps <- "all"
+  
+  if (missing(evalue) == TRUE) {
+    evalue <- ncol(data)
+  } else if (is.numeric(evalue) == TRUE) {
+    if (length(evalue) != 1)
+      stop("evalue must be a single value")
+    if (evalue != as.integer(evalue))
+      stop("evalue is not an integer")
+    evalue = as.integer(evalue)
+  } else if (is.character(evalue) == TRUE) {
+    if (length(evalue) != 1)
+      stop("evalue must be a single value")
+    evalue <- match(evalue, colnames(data))
+  } else {
+    stop("evalue must be a character or integer value")
+  }
+  if (is.na(evalue) == TRUE)
+    stop("evalue not found")
+  if (evalue < 3 | evalue > ncol(data))
+    stop("evalue must be a value from 3 to number of columns in data")
+  
+  if (missing(govalues) == TRUE) {
+    govalues <- 3:(ncol(data) - 1)
+  } else if (is.numeric(govalues) == TRUE) {
+    if (length(govalues) < 1)
+      stop("govalues must have length greater than 0")
+    if (all(govalues == as.integer(govalues)) == FALSE)
+      stop("govalues not all integers")
+    govalues <- as.integer(govalues)
+  } else if (is.character(govalues) == TRUE) {
+    if (length(govalues) < 1)
+      stop("govalues must have length greater than 0")
+    govalues <- match(govalues, colnames(data))
+  } else {
+    stop("gvalues must be character or integer values")
+  }
+  if (any(is.na(govalues) == TRUE) == TRUE)
+    stop("Not all govalues found")
+  if (length(govalues) != length(unique(govalues)))
+    stop("Repeat values found in govalues")
+  if (min(govalues) < 3 | max(govalues > ncol(data)))
+    stop("govalues must be values from 3 to the number of columns in data")
+  if (is.na(match(evalue, govalues)) != TRUE)
+    stop("evalue cannot be in govalues")
+
   if (missing(gonly) == TRUE)
     gonly <- "Wald"
   if (missing(ge) == TRUE)
@@ -585,10 +630,16 @@ lingweis <- function(data, ginfo, snps,
   
   ## Subset the subjects for analysis - complete covariate and SNP data
   ## Also match subjects with values in genetic file
+  if (evalue != ncol(data))
+    data <- data[,c(1:(evalue - 1), (evalue + 1):ncol(data), evalue)]
   subsetinfo <- subsetdata(subdata = data,
-                            ginfo = ginfo,
-                            mincov = 1L)
+                           ginfo = ginfo,
+                           evalue = evalue,
+                           mincov = 1L)
   data <- subsetinfo$subdata
+  govalues <- ifelse(govalues > evalue, govalues - 2, govalues - 1)
+  datago <- data[,c(1,govalues)]
+
   subindex <- subsetinfo$genindex
   if (subsetinfo$binarye) {
     eindex0 <- subindex[data[,ncol(data)] == 0]
@@ -628,9 +679,9 @@ lingweis <- function(data, ginfo, snps,
   #####################################################
   ###       Do initial regressions
   #####################################################
-  lslinregg <- allocatelinregmem(data = data,
-                                 n = nrow(data),
-                                 p = ncol(data) - 1L,
+  lslinregg <- allocatelinregmem(data = datago,
+                                 n = nrow(datago),
+                                 p = ncol(datago),
                                  q = 1L)
   lslinregge <- allocatelinregmem(data = data,
                                   n = nrow(data),
