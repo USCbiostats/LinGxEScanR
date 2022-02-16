@@ -521,17 +521,17 @@ lingweis <- function(data, ginfo, snps,
   if (missing(gonly) == TRUE)
     gonly <- "Wald"
   if (missing(ge) == TRUE)
-    ge <- "none"
+    ge <- "Wald"
   if (missing(ggxe) == TRUE)
-    ggxe <- c("Wald", "robustWald")
+    ggxe <- "Wald"
   if (missing(gxe) == TRUE)
-    gxe <- c("Wald", "robustWald")
+    gxe <- "Wald"
   if (missing(joint) == TRUE)
-    joint <- c("Wald", "robustWald")
+    joint <- "Wald"
   if (missing(testvalue) == TRUE)
     testvalue <- "p"
   if (missing(meta) == TRUE)
-    meta <- TRUE
+    meta <- FALSE
   if (missing(levene) == TRUE)
     levene <- c(FALSE, FALSE)
   if (missing(outfile) == TRUE)
