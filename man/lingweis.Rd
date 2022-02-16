@@ -12,10 +12,12 @@ lingweis(
   ge,
   ggxe,
   gxe,
-  twodf,
+  joint,
   levene,
+  testvalue,
+  meta,
   outfile,
-  skipfile,
+  outformat,
   minmaf,
   blksize
 )
@@ -40,7 +42,8 @@ indicating to use all SNPs. The default value is "all".}
 with the gene and all the covariates except the one used in the
 gene-environement interaction. The value must be a character array
 containing any or all of the following values, "fit", "lrt", "score",
-"Wald", and "WaldHW". This value can also be "all" or "none".}
+"robustscore", "Wald", and "robustWald". This value can also be "all"
+or "none".}
 
 \item{ge}{The tests to perform on the beta_g parameter from the model
 with the all the covariates and the gene. The value has the sames
@@ -54,7 +57,7 @@ interaction. The values has the same requirements as the gonly value.}
 that contains all the covariates, the gene, and the gene-environment
 interaction. The values has the same requirements as the gonly value.}
 
-\item{twodf}{The test two degree of tests to perform on the beta_g and
+\item{joint}{The two degree of tests to perform on the beta_g and
 beta_gxe parameters from the model that contains all the covariates,
 the gene, and the gene-environment interaction. The values has the same
 requirements as the gonly value.}
@@ -65,13 +68,18 @@ covariate and the second value indicates to run the Levene test without
 the interaction covariate. This value may be a logical array of length
 one or two. If only one value is passed it is used for both tests.}
 
+\item{testvalue}{The value to output for the test. Can be "stat", "p",
+or "both". "stat" indicates to output the test statistic. "p" indicates
+to output the p-value. "both" indicates to output the test statistic
+and the p-value.}
+
+\item{meta}{Indicator to output the values needed for a meta-analysis.}
+
 \item{outfile}{The file name for the results Can be blank.
 If the value is "", the results are returned as a data frame. Default
 value is ""}
 
-\item{skipfile}{The name of the file to write the SNPs that were not
-used and the reason they weren't used. If the value is blank, there is
-no output of the unused SNPs. Default value is "".}
+\item{outformat}{Format of the output file. Can either be "text" or "RDS".}
 
 \item{minmaf}{Minimum minor allele frequency of SNPs to include
 in analysis. SNPS that have less than 20 minor alleles observed
