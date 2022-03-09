@@ -222,6 +222,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// snprawtoint
+int snprawtoint(Rcpp::RawVector& r, Rcpp::IntegerVector& d);
+RcppExport SEXP _LinGxEScanR_snprawtoint(SEXP rSEXP, SEXP dSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector& >::type r(rSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type d(dSEXP);
+    rcpp_result_gen = Rcpp::wrap(snprawtoint(r, d));
+    return rcpp_result_gen;
+END_RCPP
+}
+// snpinttoraw
+int snpinttoraw(Rcpp::IntegerVector& d, Rcpp::RawVector& r);
+RcppExport SEXP _LinGxEScanR_snpinttoraw(SEXP dSEXP, SEXP rSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type d(dSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector& >::type r(rSEXP);
+    rcpp_result_gen = Rcpp::wrap(snpinttoraw(d, r));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_LinGxEScanR_increment", (DL_FUNC) &_LinGxEScanR_increment, 1},
@@ -236,6 +260,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_LinGxEScanR_lslinreghwtest", (DL_FUNC) &_LinGxEScanR_lslinreghwtest, 6},
     {"_LinGxEScanR_lslinreg", (DL_FUNC) &_LinGxEScanR_lslinreg, 25},
     {"_LinGxEScanR_initreg", (DL_FUNC) &_LinGxEScanR_initreg, 2},
+    {"_LinGxEScanR_snprawtoint", (DL_FUNC) &_LinGxEScanR_snprawtoint, 2},
+    {"_LinGxEScanR_snpinttoraw", (DL_FUNC) &_LinGxEScanR_snpinttoraw, 2},
     {NULL, NULL, 0}
 };
 

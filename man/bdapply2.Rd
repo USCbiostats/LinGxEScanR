@@ -52,6 +52,7 @@ aaf <- bdapply2(bdinfo = bdinfo,
 }
 \seealso{
 Other Iterating functions: 
+\code{\link{plinkapply2}()},
 \code{\link{vcfapply2}()}
 }
 \concept{Iterating functions}

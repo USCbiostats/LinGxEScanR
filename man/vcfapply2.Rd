@@ -56,6 +56,7 @@ aaf <- vcfapply2(vcfinfo = vcfinfo,
 }
 \seealso{
 Other Iterating functions: 
-\code{\link{bdapply2}()}
+\code{\link{bdapply2}()},
+\code{\link{plinkapply2}()}
 }
 \concept{Iterating functions}

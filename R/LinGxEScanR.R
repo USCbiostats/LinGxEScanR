@@ -407,8 +407,9 @@ validateinput <- function(data, ginfo, outfile, outformat,
   if (class(ginfo) != "genetic-info")
     stop("ginfo not a genetic-info class")
   if (class(ginfo$additionalinfo) != "bdose-info" &
-      class(ginfo$additionalinfo) != "vcf-info")
-    stop("ginfo does not have information about a binary dosage or a vcf file")
+      class(ginfo$additionalinfo) != "vcf-info" &
+      class(ginfo$additionalinfo) != "plink-info")
+    stop("ginfo does not have information about a binary dosage, vcf, or binary plink file")
   if (is.character(outfile) == FALSE)
     stop("outfile must be a character value")
   if (length(outfile) != 1)
@@ -671,7 +672,7 @@ lingweis <- function(data, ginfo, snps,
                         snplist = snps,
                         snpnum = snpnumber,
                         outfile = outfile)
-  } else {
+  } else if (class(ginfo$additionalinfo) == "bdose-info") {
     result <- bdapply2(ginfo,
                        func = runalllslinreg,
                        snps = snps,
@@ -695,12 +696,37 @@ lingweis <- function(data, ginfo, snps,
                        snplist = snps,
                        snpnum = snpnumber,
                        outfile = outfile)
+  } else {
+    result <- plinkapply2(plinkinfo = plinkinfo,
+                          func = runalllslinreg,
+                          snps = snps,
+                          minmac = minsum,
+                          maxmac = maxsum,
+                          subindex = subindex,
+                          binarye = subsetinfo$binarye,
+                          eindex0 = eindex0,
+                          eindex1 = eindex1,
+                          lslinregg = lslinregg,
+                          lslinregge = lslinregge,
+                          lslinreggxe = lslinreggxe,
+                          lslinregg0gxe = lslinregg0gxe,
+                          teststats = teststats,
+                          pout = pout,
+                          statout = statout,
+                          meta = meta,
+                          codemask = codemask,
+                          levene = levene,
+                          snpinfo = ginfo$snps,
+                          snplist = snps,
+                          snpnum = snpnumber,
+                          outfile = outfile)
   }
+  
   if (outfile == '') {
     m <- matrix("", length(result), length(columnnames))
     colnames(m) <- columnnames
     for (i in 1:length(result)) {
-      if (length(result[[i]]) == 1)
+      if (length(result[[i]]) < 2)
         m[i,] <- NA
       else
         m[i,] <- unlist(result[[i]])

@@ -49,3 +49,11 @@ initreg <- function(X, y) {
     .Call(`_LinGxEScanR_initreg`, X, y)
 }
 
+snprawtoint <- function(r, d) {
+    .Call(`_LinGxEScanR_snprawtoint`, r, d)
+}
+
+snpinttoraw <- function(d, r) {
+    .Call(`_LinGxEScanR_snpinttoraw`, d, r)
+}
+
