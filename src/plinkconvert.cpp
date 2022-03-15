@@ -6,7 +6,7 @@ int snprawtoint(Rcpp::RawVector &r, Rcpp::IntegerVector &d) {
   Rcpp::IntegerVector::iterator dit;
   int i, j;
   unsigned char mask[4] = {0x03, 0x0c, 0x30, 0xc0};
-  int rawtointmap[4] = {0, 1, NA_INTEGER, 2};
+  int rawtointmap[4] = {0, NA_INTEGER, 1, 2};
   
   rit = r.begin();
   for (dit = d.begin(); dit != d.end(); ++rit) {
