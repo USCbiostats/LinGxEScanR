@@ -177,22 +177,23 @@ runalllslinreg <- function(dosage, p0, p1, p2,
                            subindex, binarye, eindex0, eindex1,
                            minmac, maxmac,
                            lslinregg, lslinregge, lslinreggxe, lslinregg0gxe,
-                           teststats, pout, statout, meta,
+                           teststats, pout, statout, aacout, meta,
                            codemask, levene, snpinfo, snplist, snpnum, outfile) {
+  # Remove after testing - deals with issue in plink file
   subdose <- dosage[subindex]
   mac <- sum(subdose)
-  if (mac < minmac || mac > maxmac) {
+  if (mac < minmac[1] || mac > maxmac[1]) {
     increment(snpnum)
     return (NA)
   }
   if (binarye == TRUE) {
     mac <- sum(dosage[eindex0])
-    if (mac < 2 || mac > 2*length(subdose) - 2) {
+    if (mac < minmac[2] || mac > maxmac[2]) {
       increment(snpnum)
       return (NA)
     }
     mac <- sum(dosage[eindex1])
-    if (mac < 2 || mac > 2*length(subdose) - 2) {
+    if (mac < minmac[2] || mac > maxmac[2]) {
       increment(snpnum)
       return (NA)
     }
@@ -215,12 +216,15 @@ runalllslinreg <- function(dosage, p0, p1, p2,
   runlslinreg2(subdose, lslinreggxe, codemask$gxe)
   runlslinreg2(lslinreggxe$xr[,2], lslinregg0gxe, codemask$g0gxe)
   n <- length(subindex)
-  aaf <- mean(subdose) / 2
+  aac <- sum(subdose)
+  aaf <- mac / (2*n)
   if (binarye) {
     n0 <- length(eindex0)
     n1 <- length(eindex1)
-    aaf0 <- mean(dosage[eindex0]) / 2
-    aaf1 <- mean(dosage[eindex1]) / 2
+    aac0 <- sum(dosage[eindex0])
+    aac1 <- sum(dosage[eindex1])
+    aaf0 <- aac0 / (2*n0)
+    aaf1 <- aac1 / (2*n1)
   }
   gostats <- gstats(teststats$gonly,
                     lslinregg,
@@ -285,11 +289,17 @@ runalllslinreg <- function(dosage, p0, p1, p2,
                  gxestatsout, twodfstats, levenestats))
   }
   snpout <- paste(snpid, chromosome, location, reference, alternate, sep = '\t')
-  if (binarye)
-    nfout <- paste(n, aaf, n0, aaf0, n1, aaf1,  sep = '\t')
-  else
-    nfout <- paste(n, aaf, sep = '\t')
-
+  if (aacout == TRUE) {
+    if (binarye)
+      nfout <- paste(n, aac, n0, aac0, n1, aac1,  sep = '\t')
+    else
+      nfout <- paste(n, aac, sep = '\t')
+  } else {
+    if (binarye)
+      nfout <- paste(n, aaf, n0, aaf0, n1, aaf1,  sep = '\t')
+    else
+      nfout <- paste(n, aaf, sep = '\t')
+  }
   outline <- paste0(c(snpout, nfout, gostats, gestats, ggxestatsout,
                    gxestatsout, twodfstats, levenestats),collapse = '\t')
   filecon <- file(outfile, open = "a")
@@ -400,7 +410,7 @@ subsetdata <- function(subdata, ginfo, mincov) {
 ###          Check for valid input values
 #####################################################
 validateinput <- function(data, ginfo, outfile, outformat,
-                          minmaf, blksize) {
+                          aacout, minmaf, minmac, blksize) {
   # Check if input values are of correct type
   if (is.data.frame(data) == FALSE)
     stop("data must be a data frame")
@@ -422,12 +432,31 @@ validateinput <- function(data, ginfo, outfile, outformat,
     if (outformat != "text" & outformat != "RDS")
       stop("outformat must be either \"text\" or \"RDS\"")
   }
+  if (is.logical(aacout) == FALSE)
+    stop("aacout must be a logical value")
+  if (length(aacout) != 1)
+    stop("aacout must be single logical value")
   if (is.numeric(minmaf) == FALSE)
     stop("minmaf must be a numeric value")
   if (length(minmaf) != 1)
     stop("minmaf must be a numeric vector of length 1")
   if (minmaf < 0 | minmaf > 0.25)
     stop("minmaf must be a value from 0 to 0.25, inclusive")
+  if (is.numeric(minmac) == FALSE)
+    stop("minmac must be an integer vector")
+  if (length(minmac) == 0 || length(minmac) > 2)
+    stop("minmac must be an integer vector of length 1 or 2")
+  if (length(minmac) == 1)
+    minmac <- c(minmac, 2)
+  if (all(minmac == floor(minmac)) == FALSE)
+    stop("minmac must be an integer vector")
+  minmac <- floor(minmac)
+  if (minmac[1] < 5)
+    stop("The first value of minmac must be 5 or greater")
+  if (minmac[2] < 2)
+    stop("The second value of minmac must be 2 or greater")
+  if (minmac[1] < 2 * minmac[2])
+    stop("The first value of minmac must be greater or equal to twice the second value")
   if (is.numeric(blksize) == FALSE)
     stop("blksize must be an integer")
   if (length(blksize) != 1)
@@ -477,16 +506,18 @@ validateinput <- function(data, ginfo, outfile, outformat,
 #' beta_gxe parameters from the model that contains all the covariates,
 #' the gene, and the gene-environment interaction. The values has the same
 #' requirements as the gonly value.
-#' @param testvalue The value to output for the test. Can be "stat", "p",
-#' or "both". "stat" indicates to output the test statistic. "p" indicates
-#' to output the p-value. "both" indicates to output the test statistic
-#' and the p-value.
-#' @param meta Indicator to output the values needed for a meta-analysis.
 #' @param levene Logical array indicating which Levene tests to run. The
 #' first value indicates to run the Levene test with the interaction
 #' covariate and the second value indicates to run the Levene test without
 #' the interaction covariate. This value may be a logical array of length
 #' one or two. If only one value is passed it is used for both tests. 
+#' @param testvalue The value to output for the test. Can be "stat", "p",
+#' or "both". "stat" indicates to output the test statistic. "p" indicates
+#' to output the p-value. "both" indicates to output the test statistic
+#' and the p-value.
+#' @param aacout Indicator on whether to output alternate allele frequency
+#' or minor allele count - Default - FALSE
+#' @param meta Indicator to output the values needed for a meta-analysis.
 #' @param outfile The file name for the results Can be blank.
 #' If the value is "", the results are returned as a data frame. Default
 #' value is ""
@@ -496,6 +527,7 @@ validateinput <- function(data, ginfo, outfile, outformat,
 #' will be excluded from the analysis regardless of the value of
 #' minmaf. A value of 0 indicates to use all the SNPs that have 20
 #' minor alleles observed. Default value is 0.
+#' @param minmac
 #' @param blksize Size of blocks of SNPs to read in at one time.
 #' Larger blocks can improve overall speed but require larger
 #' amounts of computer memory. A value of 0 indicates to use the
@@ -510,8 +542,9 @@ validateinput <- function(data, ginfo, outfile, outformat,
 #'
 #' results <- gweis(data = covdata, ginfo = bdinfo)
 lingweis <- function(data, ginfo, snps,
-                     gonly, ge, ggxe, gxe, joint, levene, testvalue, meta,
-                     outfile, outformat, minmaf, blksize) {
+                     gonly, ge, ggxe, gxe, joint, levene,
+                     testvalue, aacout, meta,
+                     outfile, outformat, minmaf, minmac, blksize) {
   ## Set values to default for missing input values
   if (missing(data) == TRUE)
     stop("No subject data")
@@ -531,6 +564,8 @@ lingweis <- function(data, ginfo, snps,
     joint <- "Wald"
   if (missing(testvalue) == TRUE)
     testvalue <- "p"
+  if (missing(aacout) == TRUE)
+    aacout <- FALSE
   if (missing(meta) == TRUE)
     meta <- FALSE
   if (missing(levene) == TRUE)
@@ -541,11 +576,13 @@ lingweis <- function(data, ginfo, snps,
     outformat <- "text"
   if (missing(minmaf) == TRUE)
     minmaf <- 0.
+  if (missing(minmac) == TRUE)
+    minmac <- c(10L, 2L)
   if (missing(blksize))
     blksize <- 0L
 
   ## Make sure input values are valid  
-  validateinput(data, ginfo, outfile, outformat, minmaf, blksize)
+  validateinput(data, ginfo, outfile, outformat, aacout, minmaf, minmac, blksize)
   
   ## Subset the SNPs for analysis
   snps <- subsetsnps(snps = snps,
@@ -590,8 +627,11 @@ lingweis <- function(data, ginfo, snps,
   ###       of observed genes
   #####################################################
   minsum <- 2 * nrow(data) * minmaf
-  if (minsum < 10)
-    minsum <- 10
+  if (minsum < minmac[1]) {
+    minsum <- c(minmac[1], minmac[2])
+  } else {
+    minsum <- c(minsum, floor(minsum / minmac[1] * minmac[2]))
+  }
   maxsum <- 2*nrow(data) - minsum
 
   #####################################################
@@ -643,7 +683,7 @@ lingweis <- function(data, ginfo, snps,
     stop("Unknown value for testvalue")
   }
   columnnames <- assigncolumnnames(outfile, subsetinfo$binarye, teststats,
-                                   pout, statout, meta, levene)
+                                   pout, statout, aacout, meta, levene)
   codemask <- assigntests(teststats)
 
   snpnumber <- integer(1)
@@ -664,6 +704,7 @@ lingweis <- function(data, ginfo, snps,
                         lslinregg0gxe = lslinregg0gxe,
                         teststats = teststats,
                         pout = pout,
+                        aacout = aacout,
                         statout = statout,
                         meta = meta,
                         codemask = codemask,
@@ -689,6 +730,7 @@ lingweis <- function(data, ginfo, snps,
                        teststats = teststats,
                        pout = pout,
                        statout = statout,
+                       aacout = aacout,
                        meta = meta,
                        codemask = codemask,
                        levene = levene,
@@ -697,7 +739,7 @@ lingweis <- function(data, ginfo, snps,
                        snpnum = snpnumber,
                        outfile = outfile)
   } else {
-    result <- plinkapply2(plinkinfo = plinkinfo,
+    result <- plinkapply2(plinkinfo = ginfo,
                           func = runalllslinreg,
                           snps = snps,
                           minmac = minsum,
@@ -713,6 +755,7 @@ lingweis <- function(data, ginfo, snps,
                           teststats = teststats,
                           pout = pout,
                           statout = statout,
+                          aacout = aacout,
                           meta = meta,
                           codemask = codemask,
                           levene = levene,

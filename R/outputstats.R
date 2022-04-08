@@ -25,11 +25,20 @@ assignstats <- function(statlist, modelname) {
   return(teststats)
 }
 
-assigncolumnnames <- function(outfile, binarye, teststats, pout, statout, meta, levene) {
+assigncolumnnames <- function(outfile, binarye, teststats, pout, statout, aacout, meta, levene) {
   snpcols <- c("SNP", "CHR", "LOC", "REF", "ALT")
-  nfcols <- c("n", "aaf")
-  if (binarye == TRUE)
-    nfcols <- c(nfcols, "n_e0", "aaf_e0", "n_e1", "aaf_e1")
+  if (aacout == TRUE) {
+    nfcols <- c("n", "aac")
+  } else {
+    nfcols <- c("n", "aaf")
+  }
+  if (binarye == TRUE) {
+    if (aacout == TRUE) {
+      nfcols <- c(nfcols, "n_e0", "aac_e0", "n_e1", "aac_e1")
+    } else {
+      nfcols <- c(nfcols, "n_e0", "aaf_e0", "n_e1", "aaf_e1")
+    }
+  }
   statcols <- character(0)
   modelname <- c("go", "ge", "gxe")
 
