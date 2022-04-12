@@ -801,11 +801,21 @@ lingweis <- function(data, ginfo, snps, evalue, govalues,
   }
   if (CHARGE == TRUE) {
     res <- read.table(outfile, header = TRUE, sep = '\t', stringsAsFactors = FALSE)
-    lingxecolnames <- c("SNP", "CHR", "LOC", "ALT", "REF", "aaf", "aaf_e0", "aaf_e1", "n", "n_e1",
+    if (subsetinfo$binarye == FALSE) {
+      outcolumns <- c(1:6,9,11:27)
+    } else {
+      outcolumns <- 1:27
+    }
+    lingxecolnames <- c("SNP", "CHR", "LOC", "ALT", "REF",
+                        "aaf", "aaf_e0", "aaf_e1", "n", "n_e1",
                         "bg_go", "wald_se_bg_go", "wald_p_bg_go",
-                        "bg_gxe", "wald_se_bg_gxe", "wald_p_bg_gxe", "robustwald_se_bg_gxe", "robustwald_p_bg_gxe",
-                        "bgxe", "wald_se_bgxe", "wald_p_bgxe", "robustwald_se_bgxe", "robustwald_p_bgxe",
-                        "wald_p_joint", "wald_cov_bg_bgxe_joint", "robustwald_p_joint", "robustwald_cov_bg_bgxe_joint")
+                        "bg_gxe", "wald_se_bg_gxe", "wald_p_bg_gxe",
+                        "robustwald_se_bg_gxe", "robustwald_p_bg_gxe",
+                        "bgxe", "wald_se_bgxe", "wald_p_bgxe",
+                        "robustwald_se_bgxe", "robustwald_p_bgxe",
+                        "wald_p_joint", "wald_cov_bg_bgxe_joint",
+                        "robustwald_p_joint",
+                        "robustwald_cov_bg_bgxe_joint")[outcolumns]
     if (length(ginfo$additionalinfo$vcfinfo) != 0) {
       rowstokeep <- match(res$SNP, ginfo$snps$snpid)
       imputed <- ginfo$additionalinfo$vcfinfo$imputed[rowstokeep]
@@ -818,15 +828,23 @@ lingweis <- function(data, ginfo, snps, evalue, govalues,
     df <- data.frame(res[,colstokeep[1:3]],
                      INFO = rsq,
                      IMPUTED = imputed,
-                     res[,colstokeep[4:27]])
+                     res[,colstokeep[4:length(colstokeep)]])
+    if (subsetinfo$binarye == FALSE) {
+      outcolumns <- c(1:8,11,13:29)
+    } else {
+      outcolumns <- 1:29
+    }
     colnames(df) <- c("SNPID", "CHR", "POS",
                       "INFO", "IMPUTED",
                       "EFFECT_ALLELE", "NON_EFFECT_ALLELE",
                       "EAF_ALL", "EAF_E0", "EAF_E1", "N", "N_EXP",
                       "BETA_SNP_M2", "SE_SNP_M2", "P_SNP_M2",
-                      "BETA_SNP_M1", "SE_SNP_M1_MB", "P_SNP_M1_MB", "SE_SNP_M1_ROBUST", "P_SNP_M1_ROBUST",
-                      "BETA_INT", "SE_INT_MB", "P_INT_MB", "SE_INT_ROBUST", "P_INT_ROBUST",
-                      "P_JOINT_MB", "COV_SNP_INT_MB", "P_JOINT_ROBUST", "COV_SNP_INT_ROBUST")
+                      "BETA_SNP_M1", "SE_SNP_M1_MB", "P_SNP_M1_MB",
+                      "SE_SNP_M1_ROBUST", "P_SNP_M1_ROBUST",
+                      "BETA_INT", "SE_INT_MB", "P_INT_MB",
+                      "SE_INT_ROBUST", "P_INT_ROBUST",
+                      "P_JOINT_MB", "COV_SNP_INT_MB",
+                      "P_JOINT_ROBUST", "COV_SNP_INT_ROBUST")[outcolumns]
     write.table(df, chargeout, sep = "\t", row.names = FALSE)
   }
   return (result)
